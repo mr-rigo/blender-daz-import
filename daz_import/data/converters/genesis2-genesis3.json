@@ -1,0 +1,14 @@
+{
+    "abdomen" : "abdomenLower",
+    "abdomen2" : "abdomenUpper",
+    "chest" : "chestLower",
+    "neck" : "neckLower",
+    "tongueTip" : "tongue04",
+    "tongueBase" : "tongue01",
+    "lShldr" : "lShldrBend",
+    "rShldr" : "rShldrBend",
+    "lForeArm" : "lForearmBend",
+    "rForeArm" : "rForearmBend",
+    "lThigh" : "lThighBend",
+    "rThigh" : "rThighBend"
+}

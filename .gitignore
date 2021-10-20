@@ -129,7 +129,7 @@ dmypy.json
 .pyre/
 *__pycache__*
 *.pyc
-.vscode/.ropeproject/objectdb
-*.json
+.vscode/.ropeproject
+/*.json
 *.txt
 *.log

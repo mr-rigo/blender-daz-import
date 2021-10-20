@@ -1,0 +1,234 @@
+{
+	"character":	"60_10",
+	"scale": 5.6444,
+
+	"translate":	{
+		"hip":		["Hips", "reverse"],
+		"abdomen":	"LowerBack",
+		"abdomenLower":	"LowerBack",
+		"abdomenUpper":	"LowerBackCopy",
+		"chest":	"Spine",
+		"chestLower":	"Spine",
+		"chestUpper":	"Spine1",
+		"neck":		"Neck",
+		"neckLower":	"Neck",
+		"neckUpper":	"Neck1",
+		"head":		"Head",		
+
+		"lCollar":	"LeftShoulder",
+		"lShldr":	"LeftArm",
+		"lShldrBend":	"LeftArm",
+		"lShldrTwist":	"LeftArmCopy",
+		"lForeArm":	"LeftForeArm",
+		"lForearmBend":	"LeftForeArm",
+		"lForearmTwist":	"LeftForeArmCopy",
+		"lHand":	"LeftHand",
+		"lThumb":	"LThumb",
+		"lIndex":	"LeftHandIndex1",
+		
+		"rCollar":	"RightShoulder",
+		"rShldr":	"RightArm",
+		"rShldrBend":	"RightArm",
+		"rShldrTwist":	"RightArmCopy",
+		"rForeArm":	"RightForeArm",
+		"rForearmBend":	"RightForeArm",
+		"rForearmTwist":	"RightForeArmCopy",
+		"rHand":	"RightHand",
+		"rThumb":	"rThumb",
+		"rIndex":	"RightHandIndex1",
+		
+		"lThigh":	"LeftUpLeg",
+		"lThighBend":	"LeftUpLeg",
+		"lThighTwist":	"LeftUpLegCopy",
+		"lShin":	"LeftLeg",
+		"lFoot":	"LeftFoot",
+		"lToe":		"LeftToeBase",
+		
+		"rThigh":	"RightUpLeg",
+		"rThighBend":	"RightUpLeg",
+		"rThighTwist":	"RightUpLegCopy",
+		"rShin":	"RightLeg",
+		"rFoot":	"RightFoot",
+		"rToe":		"RightToeBase"
+	},	
+
+	"skeleton":	{
+		"Hips": [
+			"ZYX",
+			0.0000
+		],
+		"LHipJoint": [
+			"ZYX",
+			-3.1230
+		],
+		"LeftUpLeg": [
+			"ZYX",
+			2.7925
+		],
+		"LeftLeg": [
+			"ZYX",
+			2.7925
+		],
+		"LeftFoot": [
+			"ZYX",
+			-0.8508
+		],
+		"LeftToeBase": [
+			"ZYX",
+			3.1416
+		],
+		"RHipJoint": [
+			"ZYX",
+			-3.0489
+		],
+		"RightUpLeg": [
+			"ZYX",
+			-2.7925
+		],
+		"RightLeg": [
+			"ZYX",
+			-2.7925
+		],
+		"RightFoot": [
+			"ZYX",
+			0.8581
+		],
+		"RightToeBase": [
+			"ZYX",
+			3.1416
+		],
+		"LowerBack": [
+			"ZYX",
+			0.0108
+		],
+		"Spine": [
+			"ZYX",
+			-0.0046
+		],
+		"Spine1": [
+			"ZYX",
+			-0.0046
+		],
+		"Neck": [
+			"ZYX",
+			0.0018
+		],
+		"Neck1": [
+			"ZYX",
+			-0.0135
+		],
+		"Head": [
+			"ZYX",
+			-0.0059
+		],
+		"LeftShoulder": [
+			"ZYX",
+			1.5520
+		],
+		"LeftArm": [
+			"ZYX",
+			1.5708
+		],
+		"LeftForeArm": [
+			"ZYX",
+			1.5708
+		],
+		"LeftHand": [
+			"ZYX",
+			1.5708
+		],
+		"LeftFingerBase": [
+			"ZYX",
+			1.5708
+		],
+		"LeftHandIndex1": [
+			"ZYX",
+			1.5708
+		],
+		"LThumb": [
+			"ZYX",
+			2.3562
+		],
+		"RightShoulder": [
+			"ZYX",
+			-1.3982
+		],
+		"RightArm": [
+			"ZYX",
+			-1.5708
+		],
+		"RightForeArm": [
+			"ZYX",
+			-1.5708
+		],
+		"RightHand": [
+			"ZYX",
+			-1.5708
+		],
+		"RightFingerBase": [
+			"ZYX",
+			-1.5708
+		],
+		"RightHandIndex1": [
+			"ZYX",
+			-1.5708
+		],
+		"RThumb": [
+			"ZYX",
+			-2.3562
+		]
+	},
+	
+	"pose":	{
+		"Hips": [
+			[1.6804, -0.0000, -0.0000],
+			[0.0000, 0.0000, 0.0000],
+			"YZX"
+		],
+		"RightShoulder": [
+			[0.5221, -1.4336, 1.0500],
+			[0.0537, -3.5104, -1.7524],
+			"XYZ"
+		],
+		"RightArm": [
+			[-0.0421, -0.7258, 1.6919],
+			[1.2280, 1.1531, 48.6036],
+			"XYZ"
+		],
+		"RightForeArm": [
+			[0.0610, -0.8104, 1.6157],
+			[1.1764, 16.3929, 44.7665],
+			"XZY"
+		],
+		"LeftShoulder": [
+			[0.5221, 1.4336, -1.0500],
+			[0.0537, 3.5104, 1.7524],
+			"XYZ"
+		],
+		"LeftArm": [
+			[-0.0421, 0.7258, -1.6919],
+			[1.2280, -1.1531, -48.6036],
+			"XYZ"
+		],
+		"RightUpLeg": [
+			[1.6436, -2.7591, -0.2757],
+			[1.1639, -4.8555, -7.9452],
+			"YZX"
+		],
+		"RightLeg": [
+			[1.5842, -2.7771, -0.3053],
+			[5.1504, -9.7297, -8.5415],
+			"YZX"
+		],
+		"LeftUpLeg": [
+			[1.6436, 2.7591, 0.2757],
+			[1.1639, 4.8555, 7.9452],
+			"YZX"
+		],
+		"LeftLeg": [
+			[1.5842, 2.7771, 0.3053],
+			[5.1504, 9.7297, 8.5415],
+			"YZX"
+		]
+	}
+}

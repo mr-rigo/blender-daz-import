@@ -1,0 +1,29 @@
+{
+	"name" : "Genesis2-male",
+	"hd-morphs" : false,
+	"units" : {
+		"prefix" : "phm",
+		"include" : "phmunits",
+		"exclude" : [],
+		"path" : "data/DAZ 3D/Genesis 2/Male/Morphs/DAZ 3D/Base/"
+	},
+	"expressions" : {
+		"prefix" : "phm",
+		"include" : ["phm"],
+		"exclude" : "phmunits",
+		"path" : "data/DAZ 3D/Genesis 2/Male/Morphs/DAZ 3D/Base/"
+	},
+	"visemes" : {
+		"prefix" : "vsm",
+		"include" : ["vsm"],
+		"exclude" : [],
+		"path" : "data/DAZ 3D/Genesis 2/Male/Morphs/DAZ 3D/Base/"
+	},
+	"body" : {
+		"prefix" : "ctrl",
+		"include" : ["ctrl"],
+		"exclude" : [],
+		"path" : "data/DAZ 3D/Genesis 2/Male/Morphs/DAZ 3D/Base/"
+	}
+}	
+		

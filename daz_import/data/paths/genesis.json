@@ -1,0 +1,30 @@
+{
+	"name" : "Genesis",
+	"hd-morphs" : false,
+	"units" : {
+		"prefix" : "phm",
+		"include" : "phmunits",
+		"exclude" : [],
+		"path" : "data/DAZ 3D/Genesis/Base/Morphs/DAZ 3D/Base/"
+	},
+	"expressions" : {
+		"prefix" : "phm",
+		"include" : ["phm"],
+		"exclude" : "units",
+		"path" : "data/DAZ 3D/Genesis/Base/Morphs/DAZ 3D/Base/"
+	},
+	"visemes" : {
+		"prefix" : "vsm",
+		"include" : ["vsm"],
+		"exclude" : [],
+		"path" : "data/DAZ 3D/Genesis/Base/Morphs/DAZ 3D/Base/"
+	},
+	"body" : {
+		"prefix" : ["ctrl", "pbm"],
+		"include" : ["ctrl", "pbm"],
+		"exclude" : "units",
+		"exclude2" : ["ctrlvsm"],
+		"path" : "data/DAZ 3D/Genesis/Base/Morphs/DAZ 3D/Base/"
+	}
+}	
+		

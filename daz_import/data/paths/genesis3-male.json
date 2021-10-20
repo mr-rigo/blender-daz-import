@@ -1,0 +1,42 @@
+{
+	"name" : "Genesis3-male",
+	"hd-morphs" : false,
+	"units" : {
+		"prefix" : ["ectrl", "ctrl", "phm", "ephm"],
+		"include" : ["ectrl", "ctrl", "phm", "ephm"],
+		"exclude" : ["ectrlv"],
+		"path" : "data/DAZ 3D/Genesis 3/Male/Morphs/DAZ 3D/Base Pose/"
+	},
+	"expressions" : {
+		"prefix" : ["ectrl", "ejcm", "ephm"],
+		"include" : ["ectrl", "ejcm", "ephm"],
+		"exclude" : [],
+		"path" : "data/DAZ 3D/Genesis 3/Male/Morphs/DAZ 3D/Expressions/"
+	},
+	"visemes" : {
+		"prefix" : "ectrlv",
+		"include" : ["ectrlv"],
+		"exclude" : [],
+		"path" : "data/DAZ 3D/Genesis 3/Male/Morphs/DAZ 3D/Base Pose/"
+	},
+	"head" : {
+		"prefix" : ["phm", "ctrl"],
+		"include" : ["phm", "ctrl"],
+		"exclude" : [],
+		"path" : "data/DAZ 3D/Genesis 3/Male/Morphs/DAZ 3D/Head/"
+	},
+	"jcms" : {
+		"prefix" : ["pjcm", "lshldr", "rshldr"],
+		"strip" : ["pjcm"],
+		"include" : ["pjcm", "lshldr", "rshldr"],
+		"exclude" : [],
+		"path" : "data/DAZ 3D/Genesis 3/Male/Morphs/DAZ 3D/Base Correctives/"
+	},
+	"body" : {
+		"prefix" : ["pctrl", "ppbm"],
+		"include" : ["pctrl", "ppbm"],
+		"exclude" : [],
+		"path" : "data/DAZ 3D/Genesis 3/Male/Morphs/DAZ 3D/Base Pose/"
+	}
+}	
+		
