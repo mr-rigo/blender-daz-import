@@ -1,0 +1,342 @@
+// DAZ Studio Script
+
+var appName = "export_highdef_to_blender";
+var version = 0.8;
+
+function createDialog()
+{
+    // Get the current style
+    var oStyle = App.getStyle();
+
+    // Get the height for buttons
+    var nBtnHeight = oStyle.pixelMetric( "DZ_ButtonHeight" );
+
+    // Create a basic dialog
+    var wDlg = new DzBasicDialog();
+
+    // Get the wrapped widget for the dialog
+    var oDlgWgt = wDlg.getWidget();
+
+    // Set the title of the dialog
+    wDlg.caption = "HD export";
+
+    // Strip the space for a settings key
+    var sKey = wDlg.caption.replace( / /g, "" ) + "Dlg";
+
+    // Set an [unique] object name on the wrapped dialog widget;
+    // this is used for recording position and size separately
+    // from all other [uniquely named] DzBasicDialog instances
+    oDlgWgt.objectName = sKey;
+
+
+    // Write the line
+    var filepath = FileDialog.doFileDialog(
+        false,
+        "Save As",
+        getScenePath(),
+        "DBZ Files (*.dbz *.duf)"
+        );
+    if( !filepath )
+    {
+        return;
+    }
+
+    var uvButton = new DzCheckBox( wDlg );
+    uvButton.text = "Export HD UVs";
+    uvButton.checked = true;
+    wDlg.addWidget( uvButton );
+
+    // Get the minimum size of the dialog
+    var sizeHint = oDlgWgt.minimumSizeHint;
+    // Set the fixed size of the dialog
+    wDlg.setFixedSize( sizeHint.width, sizeHint.height );
+
+    // If the user accepts the dialog
+    if( wDlg.exec() ){
+        exportHighdefToBlender(filepath, uvButton.checked);
+    // If the user rejects the dialog
+    } else {
+        return;
+    }
+}
+
+
+function exportHighdefToBlender(filepath, useHdUvs)
+{
+    var date1 = new Date();
+    var time1 = date1.getTime();
+    var filepath0 = filepath + "0"
+    fp = new DzFile( filepath0 );
+    fp.open( fp.WriteOnly );
+
+    fp.writeLine("{");
+    fp.writeLine("    \"application\": \"export_highdef_to_blender\",");
+    fp.writeLine("    \"version\": " + version + ",");
+
+    fp.writeLine("    \"figures\": [");
+
+    for ( var i = 0; i < Scene.getNumNodes(); i++ )
+    {
+        var node = Scene.getNode(i);
+
+        if ( node.inherits( "DzSkeleton" ) )
+        {
+            doFigure(fp, node, useHdUvs);
+        }
+        else
+        {
+            obj = node.getObject();
+            if (obj != null)
+            {
+                doMesh(fp, obj, true, node, "        ]", "    },", useHdUvs);
+            }
+        }
+    }
+
+    fp.writeLine("    {" );
+    fp.writeLine("        \"name\": \"dummy\",");
+    fp.writeLine("        \"num verts\": 0");
+    fp.writeLine("    }" );
+
+    fp.writeLine("    ]");
+    fp.writeLine("}" );
+    fp.close();
+
+    var fp1 = new DzGZFile( filepath );
+    var ok = fp1.zip(filepath0);
+    fp1.close();
+    if (ok) {
+        fp.remove()
+    }
+    else {
+        var oDir = fp.dir();
+        oDir.move(filepath0, filepath)
+    }
+
+    var date2 = new Date();
+    var time2 = date2.getTime();
+    if (ok)
+        msg = "GZipped file \"" + filepath + "\"\nsaved in " + (time2-time1)/1000 + " seconds.";
+    else
+        msg = "Text file \"" + filepath + "\"\nsaved in " + (time2-time1)/1000 + " seconds.";
+    MessageBox.information( msg, appName, "&OK" );
+}
+
+//===============================================================================
+//
+//===============================================================================
+
+function doFigure(fp, figure, useHdUvs)
+{
+    figure.finalize();
+    startObject(fp, figure);
+
+    var obj = figure.getObject();
+    if (obj != null)
+    {
+        doMesh(fp, obj, false, figure, "        ],", "", useHdUvs);
+    }
+
+    var bones = figure.getAllBones();
+    var n = bones.length;
+
+    fp.writeLine("        \"bones\": ");
+    fp.writeLine("        [");
+    c = ","
+    for( var i = 0; i < n; i++ )
+    {
+        bone = bones[i];
+        bone.finalize();
+        fp.writeLine("            {");
+        fp.writeLine("                \"name\": \""+ bone.name + "\",");
+        fp.writeLine("                \"center_point\": " + bone.getOrigin() + ",");
+        fp.writeLine("                \"end_point\": " + bone.getEndPoint() + ",");
+        fp.writeLine("                \"orientation\": " + bone.getOrientation() + ",");
+        fp.writeLine("                \"origin\": " + bone.getOrigin() + ",");
+        fp.writeLine("                \"rotation_order\": \"" + bone.getRotationOrder() + "\",");
+        fp.writeLine("                \"ws_pos\": " + bone.getWSPos() + ",");
+        fp.writeLine("                \"ws_rot\": " + bone.getWSRot() + ",");
+        fp.writeLine("                \"ws_scale\": " + bone.getWSScale() + ",");
+        fp.writeLine("                \"ws_transform\": " + bone.getWSTransform() );
+        if (i == n-1) c = "";
+        fp.writeLine("            }" + c );
+    }
+    fp.writeLine("        ]");
+    fp.writeLine("    }," );
+}
+
+//===============================================================================
+//
+//===============================================================================
+
+function startObject(fp, node)
+{
+    fp.writeLine("    {" );
+    fp.writeLine("        \"name\": \"" + node.name + "\",");
+    fp.writeLine("        \"center_point\": " + node.getOrigin() + ",");
+    fp.writeLine("        \"end_point\": " + node.getEndPoint() + ",");
+}
+
+
+function doMesh(fp, obj, start, node, str1, str2, useHdUvs)
+{
+    var shape = obj.getCurrentShape();
+    if (shape == null)
+        return false;
+    var clname = node.className();
+    if (clname == "DzGeometryShellNode")
+        return false;
+    var lodctrl = shape.getLODControl();
+    var lodvalue = lodctrl.getValue();
+    var level = shape.getSubDDrawLevel();
+
+    if (start)
+        startObject(fp, node);
+
+    // Write HD data
+    //obj.forceCacheUpdate(node,false);
+    var geom = obj.getCachedGeom();
+    fp.writeLine("        \"lod\": " + lodvalue + ",");
+    if (lodvalue > 0)
+    {
+        fp.writeLine("        \"subd level\": " + level + ",");
+        doVertices(fp, geom, "hd ");
+        fp.writeLine("        ],");
+        if (useHdUvs)
+            doUVs(fp, geom, "hd ");
+        doFaces(fp, geom, "hd ");
+        doMaterialGroups(fp, geom, "hd ");
+    }
+
+    // Turn off high resolution
+    lodctrl.setValue(0);
+    obj.forceCacheUpdate(node,false);
+    var geom = obj.getCachedGeom();
+    if (geom == null) {
+        lodctrl.setValue(lodvalue);
+        return endMesh(fp, str1, str2);
+    }
+
+    if (clname == "DzStrandHairNode")
+    {
+        fp.writeLine("        \"node\": {");
+        doProperties(fp, node, "        ");
+        fp.writeLine("        },");
+        doFaces(fp, geom, "");
+    }
+
+    doMaterialGroups(fp, geom, "");
+    doVertices(fp, geom, "");
+    fp.writeLine(str1);
+    fp.writeLine(str2);
+    lodctrl.setValue(lodvalue);
+    return true;
+}
+
+function endMesh(fp, str1, str2)
+{
+    fp.writeLine("        \"dummy\": 0")
+    fp.writeLine(str2);
+    return false;
+}
+
+function doProperties(fp, mat, pad)
+{
+    var np = mat.getNumProperties();
+    var buf = (pad + "   \"name\": \"" + mat.name + "\",\n");
+    buf += (pad + "   \"properties\": {\n" );
+
+    var c = ","
+    for (var i = 0; i < np; i++)
+    {
+        var prop = mat.getProperty(i);
+        var value = prop.getValue();
+        if (i == np-1) c = "";
+        if (prop.isNumeric())
+            buf += (pad + "      \"" + prop.name + "\": " + value + c + "\n");
+    }
+    buf += (pad + "   }");
+    fp.writeLine(buf);
+}
+
+function doMaterialGroups(fp, geom, hd)
+{
+    var nm = geom.getNumMaterialGroups();
+    fp.writeLine("        \"" + hd + "material groups\": [" );
+
+    var c = ","
+    for (var i = 0; i < nm; i++)
+    {
+        var mat = geom.getMaterialGroup(i);
+        if (i == nm-1) c = "";
+        fp.writeLine("            \"" + mat.name + "\"" + c);
+    }
+    fp.writeLine("        ],");
+}
+
+function doVertices(fp, geom, hd)
+{
+    var nv = geom.getNumVertices();
+    var ne = geom.getNumEdges();
+    var nf = geom.getNumFacets();
+    var buf = ("        \"num " + hd + "verts\": " + nv + ",\n");
+    buf += ("        \"" + hd + "vertices\": [\n" );
+
+    var c = ",\n"
+    for (var i = 0; i < nv; i++)
+    {
+        var v = geom.getVertex(i);
+        if (i == nv-1) c = "";
+        buf += ("            [" + v.x + ", " + v.y + ", " + v.z + "]" + c)
+    }
+    fp.writeLine(buf);
+}
+
+function doUVs(fp, geom, hd)
+{
+    var uvs = geom.getUVs();
+    var nuv = uvs.getNumValues();
+    var label = uvs.getLabel();
+    var buf = ("        \"" + hd + "uvset\": \"" + label + "\",\n");
+    buf += ("        \"" + hd + "uvs\": [\n" );
+    var c = ",\n"
+    for (var i = 0; i < nuv; i++)
+    {
+        var uv = uvs.getPnt2Vec(i);
+        if (i == nuv-1) c = "\n";
+        buf += ("            [" + uv.x + ", " + uv.y + "]" + c);
+    }
+    buf += ("        ],");
+    fp.writeLine(buf);
+}
+
+function doFaces(fp, geom, hd)
+{
+    var nf = geom.getNumFacets();
+    var buf = ("        \"" + hd + "faces\": [\n" );
+    var c = ",\n"
+    for (var i = 0; i < nf; i++)
+    {
+        var f = geom.getFacet(i);
+        if (i == nf-1) c = "\n";
+        buf += ("            " + f + c)
+    }
+    buf += ("        ],");
+    fp.writeLine(buf);
+}
+
+//==============================================================================
+// Find current duf scene path. (it should be saved untill export json)
+//==============================================================================
+
+function getScenePath()
+{
+    var fPath = Scene.getFilename(); //get current scene file path
+    var val = fPath.left( fPath.length - 4 ) + ".dbz"; // .duf => .dbz
+    return (val);
+}
+
+//==============================================================================
+// Run it
+//==============================================================================
+createDialog()

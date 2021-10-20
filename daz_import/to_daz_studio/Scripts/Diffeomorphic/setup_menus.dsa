@@ -1,0 +1,55 @@
+// DAZ Studio Script
+
+var appName = "setup_menus";
+var version = 0.1;
+
+function setupMenus(text, desc, file)
+{
+    var oMgr = MainWindow.getActionMgr();
+ 
+    for (var n=0; n<oMgr.getNumCustomActions(); n++) {
+        if (text == oMgr.getCustomActionText(n)) {
+            msg = "Menu entry for " + text + " already exists.\nReplacing..."
+            MessageBox.information( msg, appName, "&OK" );
+            oMgr.removeCustomAction( n ) ;
+        }
+    }    
+
+    var oContentMgr = App.getContentMgr();
+    var sScriptPath = getScriptFileName();
+    var nDirType = DzContentMgr.AllDirs;    
+    var sPreferredBasePath = oContentMgr.getMappedPath( nDirType, sScriptPath, false );
+    var sAbsolutePath = oContentMgr.getAbsolutePath( nDirType, file, sPreferredBasePath );
+    var oAction = oMgr.addCustomAction(text, desc, sAbsolutePath);
+    
+    var oMenu = oMgr.getMenu();
+    var oFileMenu = oMenu.findSubMenu( "\&File" ) 
+    var n = -1;
+    var m = -1;
+    for (var i=0; i<oFileMenu.getNumItems(); i++) {
+        var item = oFileMenu.getItem(i);
+        var label = item.label;
+        if (item.label == "\&Export...") 
+            n = i+1;
+        else if (item.label == text)
+            m = i;            
+    }
+    if (m > 0)
+        oFileMenu.removeItem(i);
+    oFileMenu.insertCustomAction( oAction, n );                  
+}
+
+//==============================================================================
+// Run it
+//==============================================================================
+
+setupMenus("Export HD To Blender",
+           "Export a .dzb file for use with the DAZ Importer",
+           "/Scripts/Diffeomorphic/export_highdef_to_blender.dsa");
+
+setupMenus("Export To Blender",
+           "Export a .dzb file for use with the DAZ Importer",
+           "/Scripts/Diffeomorphic/export_to_blender.dsa");
+           
+msg = "Menu entries created."
+MessageBox.information( msg, appName, "&OK" );

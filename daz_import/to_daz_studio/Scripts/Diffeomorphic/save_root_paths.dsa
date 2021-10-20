@@ -1,0 +1,63 @@
+// DAZ Studio Script
+
+var appName = "save_root_paths";
+var version = 0.1;
+
+function setupDazPaths()
+{
+    var filepath = FileDialog.doFileDialog( 
+        false, 
+        "Save As", 
+        "import-daz-paths.json", 
+        "JSON Files (*.json)" 
+        );
+        
+    if( !filepath )
+    {
+        return;
+    }
+
+    fp = new DzFile( filepath );
+    debug( fp.baseName() );
+    fp.open( fp.WriteOnly );
+    
+    fp.writeLine("{");
+    fp.writeLine("    \"application\": \"" + appName + "\",");
+    fp.writeLine("    \"version\": " + version + ",");
+
+    var cmgr = App.getContentMgr();
+    doDirs(fp, "content", cmgr.getNumContentDirectories(), cmgr.getContentDirectoryPath);
+    doDirs(fp, "builtin_mdl", cmgr.getNumBuiltInMDLDirectories(), cmgr.getBuiltInMDLDirectoryPath);
+    doDirs(fp, "import_dirs", cmgr.getNumImportDirectories(), cmgr.getImportDirectoryPath);
+    doDirs(fp, "mdl_dirs", cmgr.getNumMDLDirectories(), cmgr.getMDLDirectoryPath);
+
+    path = cmgr.getBuiltInContentDirectoryPath();
+    fp.writeLine("    \"builtin_content\" : \"" + path + "\",");        
+    
+    path = cmgr.getCloudContentDirectoryPath();
+    fp.writeLine("    \"cloud_content\" : \"" + path + "\"");        
+    
+    fp.writeLine("}");
+
+    fp.close();
+    msg = "File \"" + filepath + "\" saved.";
+    MessageBox.information( msg, appName, "&OK" );
+}    
+
+    
+function doDirs(fp, key, ndirs, fcn)
+{
+    fp.writeLine("    \"" + key + "\": [");
+    var c = ",";
+    for (var n=0; n<ndirs; n++)
+    {
+    	if (n == ndirs-1) c = "";
+        fp.writeLine("        \"" + fcn(n) + "\"" + c);        
+    }
+    fp.writeLine("    ],");
+}
+
+
+setupDazPaths();
+
+ 
