@@ -7,13 +7,13 @@
         {
             "label": "Debug",
             "type": "shell",
-            "command": "blender --python daz_import_debug.py",
+            "command": "blender --python debug.py",
             "problemMatcher": []
         },
         {
             "label": "Debug in console",
             "type": "shell",
-            "command": "blender --python daz_import_debug.py --background",
+            "command": "blender --python debug.py --background",
             "problemMatcher": []
         }
     ]
