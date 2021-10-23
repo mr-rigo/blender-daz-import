@@ -1,13 +1,15 @@
 # import math
 import os
-from typing import Type, Dict, Any, List
+from typing import Type, Dict, List, Tuple
 from mathutils import Vector
 
 import bpy
+
 from bpy.types import Material as BlenderMaterial
 from bpy.types import ShaderNode, NodeLink, \
     ShaderNodeTexImage, ShaderNodeBump, NodeSocketVector,\
-    ShaderNodeGroup, ShaderNodeTexImage,ShaderNodeMapping
+    ShaderNodeGroup, ShaderNodeTexImage, ShaderNodeMapping,\
+    ShaderNodeBsdfDiffuse, ShaderNodeOutputMaterial
 
 from daz_import.Elements.Color import ColorStatic
 from daz_import.Lib.Errors import DazError
@@ -20,8 +22,9 @@ from daz_import.Elements.Material.Material import Material
 
 class CyclesTree(CyclesStatic):
 
-    def __init__(self, material: Material):        
+    def __init__(self, material: Material):
         self.material: Material = material
+        self.easy = False
 
         self.type: str = 'CYCLES'
 
@@ -105,9 +108,10 @@ class CyclesTree(CyclesStatic):
         else:
             return self.eevee.outputs[0]
 
-    def addGroup(self, cls: Type, name, col=None, size=0, args=[], force=False):
+    def addGroup(self, cls: Type, name, col=None,
+                 size=0, args=[], force=False):
         from daz_import.cgroup import CyclesGroup
-        
+
         if col is None:
             col = self.column
 
@@ -115,7 +119,7 @@ class CyclesTree(CyclesStatic):
         group: CyclesGroup = cls()
 
         if name in bpy.data.node_groups.keys() and not force:
-            tree = bpy.data.node_groups[name]            
+            tree = bpy.data.node_groups[name]
             if group.mat_group.checkSockets(tree):
                 node.node_tree = tree
                 return node
@@ -148,10 +152,12 @@ class CyclesTree(CyclesStatic):
         if shell.tree:
             node.node_tree = shell.tree
             node.inputs["Influence"].default_value = 1.0
+
             return node
         elif shell.match and shell.match.tree:
             node.node_tree = shell.tree = shell.match.tree
             node.inputs["Influence"].default_value = 1.0
+
             return node
 
         if self.type == 'CYCLES':
@@ -171,7 +177,7 @@ class CyclesTree(CyclesStatic):
 
         group.create(node, nname, self)
         group.addNodes((shmat, shell.uv))
-        
+
         node.inputs["Influence"].default_value = 1.0
         shell.tree = shmat.tree = node.node_tree
         shmat.geometry = self.material.geometry
@@ -179,12 +185,36 @@ class CyclesTree(CyclesStatic):
 
     def build(self):
         self.makeTree()
+        if self.easy:
+            self.easy_build()
+            return
+
         self.buildLayer()
         self.buildCutout()
         self.buildVolume()
         self.buildDisplacementNodes()
         self.buildShells()
         self.buildOutput()
+
+    def easy_build(self):
+        mat = self.material.rna
+        mat.use_nodes = True
+        bsdf: ShaderNodeBsdfDiffuse = mat.node_tree.nodes.new(
+            'ShaderNodeBsdfPrincipled')
+
+        out: ShaderNodeOutputMaterial = mat.node_tree.nodes.new(
+            'ShaderNodeOutputMaterial')
+
+        bsdf.inputs['Base Color'].default_value = (1, 1, 1, 1)
+        bsdf.inputs['Specular'].default_value = 0.2
+        self.links.new(out.inputs['Surface'], bsdf.outputs['BSDF'])
+        color, diffuse = self.getDiffuseColor()
+
+        if diffuse:
+            self.links.new(bsdf.inputs['Base Color'], diffuse.outputs['Color'])
+
+        # import pdb
+        # pdb.set_trace()
 
     def buildShells(self):
         shells = []
@@ -218,7 +248,7 @@ class CyclesTree(CyclesStatic):
             self.displacement = node.outputs["Displacement"]
             self.ycoords[self.column] -= 50
 
-    def buildLayer(self, uvname = ''):
+    def buildLayer(self, uvname=''):
         self.buildNormal(uvname)
         self.buildBump()
         self.buildDetail(uvname)
@@ -253,10 +283,14 @@ class CyclesTree(CyclesStatic):
         mat.node_tree.nodes.clear()
         self.nodes = mat.node_tree.nodes
         self.links = mat.node_tree.links
+        if self.easy:
+            return
 
         return self.addTexco(slot)
 
     def addTexco(self, slot):
+        if self.easy:
+            return
 
         if self.material.useDefaultUvs:
             node = self.addNode("ShaderNodeTexCoord", 1)
@@ -326,7 +360,6 @@ class CyclesTree(CyclesStatic):
 
             return mapping
         return None
-
 
 
 # -------------------------------------------------------------
@@ -467,7 +500,7 @@ class CyclesTree(CyclesStatic):
 #   Diffuse and Diffuse Overlay
 # -------------------------------------------------------------
 
-    def getDiffuseColor(self):
+    def getDiffuseColor(self) -> Tuple[Vector, ShaderNode]:
         color, tex = self.getColorTex(
             "getChannelDiffuse", "COLOR", ColorStatic.WHITE)
         effect = self.getValue(["Base Color Effect"], 0)
@@ -1163,14 +1196,14 @@ class CyclesTree(CyclesStatic):
         from daz_import.cgroup import VolumeGroup
 
         dist = self.getValue(["Transmitted Measurement Distance"], 0.0)
-        
+
         if ColorStatic.isBlack(transcolor) or ColorStatic.isWhite(transcolor) or dist == 0.0:
             return
 
         self.volume = self.addGroup(VolumeGroup, "DAZ Volume")
         self.volume.inputs["Absorbtion Density"].default_value = 100/dist
         self.linkColor(transtex, self.volume,
-                        transcolor, "Absorbtion Color")
+                       transcolor, "Absorbtion Color")
 
     def buildVolumeSubSurface(self, sssmode, ssscolor, ssstex):
         from daz_import.cgroup import VolumeGroup
@@ -1208,12 +1241,16 @@ class CyclesTree(CyclesStatic):
         self.column += 1
         output = self.addNode("ShaderNodeOutputMaterial")
         output.target = 'ALL'
+
         if self.cycles:
             self.links.new(self.getCyclesSocket(), output.inputs["Surface"])
+
         if self.volume and not self.useCutout:
             self.links.new(self.volume.outputs[0], output.inputs["Volume"])
+
         if self.displacement:
             self.links.new(self.displacement, output.inputs["Displacement"])
+
         if self.liegroups:
             node = self.addNode("ShaderNodeValue", col=self.column-1)
             node.outputs[0].default_value = 1.0
@@ -1280,7 +1317,7 @@ class CyclesTree(CyclesStatic):
             if not hasMap:
                 self.setTexNode(imgname, texnode, colorSpace)
         return texnode, isnew
-    
+
     def addTextureNode(self, col, img, imgname, colorSpace) -> ShaderNodeTexImage:
         node = self.addNode("ShaderNodeTexImage", col)
 
@@ -1294,9 +1331,9 @@ class CyclesTree(CyclesStatic):
         if hasattr(node, "image_user"):
             node.image_user.frame_duration = 1
             node.image_user.frame_current = 1
-        
+
         return node
-    
+
     @staticmethod
     def setColorSpace(node, colorSpace):
         if hasattr(node, "color_space"):
@@ -1304,7 +1341,7 @@ class CyclesTree(CyclesStatic):
 
     def addImageTexNode(self, filepath: str, tname, col) -> ShaderNodeTexImage:
         img = bpy.data.images.load(filepath)
-        img.name = os.path.splitext(os.path.basename(filepath))[0]        
+        img.name = os.path.splitext(os.path.basename(filepath))[0]
         img.colorspace_settings.name = "Non-Color"
         return self.addTextureNode(col, img, tname, "NONE")
 
@@ -1321,10 +1358,14 @@ class CyclesTree(CyclesStatic):
         self.texnodes[key].append((texnode, colorSpace))
 
     def linkVector(self, texco, node, slot="Vector"):
+        if not texco:
+            return
+
         if (isinstance(texco, bpy.types.NodeSocketVector) or
                 isinstance(texco, bpy.types.NodeSocketFloat)):
             self.links.new(texco, node.inputs[slot])
             return
+
         if "Vector" in texco.outputs.keys():
             self.links.new(texco.outputs["Vector"], node.inputs[slot])
         else:
@@ -1333,9 +1374,9 @@ class CyclesTree(CyclesStatic):
     def addTexImageNode(self, channel, colorSpace=None):
         col = self.column-2
         textures, maps = self.material.getTextures(channel)
-        
+
         if len(textures) != len(maps):
-            print(textures, '\n', maps)            
+            print(textures, '\n', maps)
             raise DazError("Bug: Num assets != num maps")
         elif len(textures) == 0:
             return None
@@ -1350,24 +1391,24 @@ class CyclesTree(CyclesStatic):
 
         node = self.addNode("ShaderNodeGroup", col)
         node.width = 240
-        
+
         try:
             name = os.path.basename(textures[0].map.url)
         except:
             name = "Group"
-        
+
         group = LieGroup()
         group.create(node, name, self)
         self.linkVector(self.texco, node)
         group.addTextureNodes(textures, maps, colorSpace)
 
-        node.inputs["Alpha"].default_value = 1        
+        node.inputs["Alpha"].default_value = 1
         self.liegroups.append(node)
-        
+
         return node
 
     def mixTexs(self, op, tex1, tex2, slot1=0, slot2=0, color1=None, color2=None, fac=1, factex=None):
-        
+
         if fac < 1 or factex:
             pass
         elif tex1 is None:
@@ -1379,7 +1420,7 @@ class CyclesTree(CyclesStatic):
         mix.blend_type = op
         mix.use_alpha = False
         mix.inputs[0].default_value = fac
-        
+
         if factex:
             self.links.new(factex.outputs[0], mix.inputs[0])
 

@@ -51,6 +51,7 @@ class CyclesMaterial(Material):
 
         self.tree = self.setupTree(color)
         self.tree.build()
+        
 
     def setupTree(self, color=None) -> CyclesTree:
         from daz_import.Elements.Material.PbrTree import PbrTree

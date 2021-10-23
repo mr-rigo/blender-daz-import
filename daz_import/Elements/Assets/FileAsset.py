@@ -345,7 +345,7 @@ class FileAsset(Asset):
         from daz_import.Lib.Utility import Progress, Updating
         
         Progress.show(20, 100)
-
+        
         print("Preprocessing...")
 
         for asset, inst in self.nodes:
