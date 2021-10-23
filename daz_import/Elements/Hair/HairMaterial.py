@@ -6,21 +6,20 @@ from .Hair import getHairTree
 class HairMaterial(CyclesMaterial):
 
     def __init__(self, name, color):
-        CyclesMaterial.__init__(self, name)
+        super().__init__(name)
         self.name = name
         self.color = color
 
     def guessColor(self):
-        if self.rna:
+        if self.rna:            
             self.rna.diffuse_color = self.color
 
     def build(self, context, color):
         if self.dontBuild():
             return
-
-        Material.build(self, context)
-        self.tree = getHairTree(self, color)
-        self.tree.build()
+        super().build(self, context)        
+        # self.tree = getHairTree(self, color)
+        # self.tree.build()        
         self.rna.diffuse_color[0:3] = self.color
 
     @staticmethod

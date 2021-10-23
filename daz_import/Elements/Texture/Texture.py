@@ -1,5 +1,6 @@
 from __future__ import annotations
 import bpy
+from bpy.types import Texture as BlenderTexture
 
 from typing import List, Dict
 from daz_import.utils import *
@@ -11,8 +12,9 @@ class Texture:
     _textures: Dict[str, Texture] = {}
 
     def __init__(self, map_):
-        self.rna = None
-        self.map = map_
+        from .Map import Map
+        self.rna: BlenderTexture = None
+        self.map: Map = map_
         self.built: Dict[str, bool] = {"COLOR": False, "NONE": False}
         self.images: Dict[str, Any] = {"COLOR": None, "NONE": None}
 
@@ -30,7 +32,9 @@ class Texture:
     def buildInternal(self):
         if self.built["COLOR"]:
             return self
+
         key = self.getName()
+
         if key:
             img = self.images["COLOR"] = self.map.build()
             if img:
@@ -38,13 +42,16 @@ class Texture:
                 tex.image = img
             else:
                 tex = None
+
             self._textures[key] = self
         else:
             tex = self.rna = bpy.data.textures.new(self.map.label, 'BLEND')
             tex.use_color_ramp = True
-            r, g, b = self.map.color
+            color = tuple(*self.map.color, 1)
+
             for elt in tex.color_ramp.elements:
-                elt.color = (r, g, b, 1)
+                elt.color = color
+
         self.built["COLOR"] = True
         return self
 
@@ -78,7 +85,7 @@ class Texture:
         else:
             return (self.map and self.map.size is not None)
 
-    def getMapping(self, mat, map):  # : Map
+    def getMapping(self, mat, map_):  # : Map
         # mapping scale x = texture width / lie document size x * (lie x scale / 100)
         # mapping scale y = texture height / lie document size y * (lie y scale / 100)
         # mapping location x = udim place + lie x position * (lie y scale / 100) / lie document size x
@@ -94,35 +101,35 @@ class Texture:
             return (0, 0, 1, 1, 0)
 
         tx, ty = img.size
-        mx, my = map.size
+        mx, my = map_.size
         kx, ky = tx/mx, ty/my
-        ox, oy = map.xoffset/mx, map.yoffset/my
-        rz = map.rotation
+        ox, oy = map_.xoffset/mx, map_.yoffset/my
+        rz = map_.rotation
 
         ox += mat.channelsData.getValue("getChannelHorizontalOffset", 0)
         oy += mat.channelsData.getValue("getChannelVerticalOffset", 0)
         kx *= mat.channelsData.getValue("getChannelHorizontalTiles", 1)
         ky *= mat.channelsData.getValue("getChannelVerticalTiles", 1)
 
-        sx = map.xscale*kx
-        sy = map.yscale*ky
+        sx = map_.xscale*kx
+        sy = map_.yscale*ky
 
         if rz == 0:
             dx = ox
             dy = 1 - sy - oy
-            if map.xmirror:
+            if map_.xmirror:
                 dx = sx + ox
                 sx = -sx
-            if map.ymirror:
+            if map_.ymirror:
                 dy = 1 - oy
                 sy = -sy
         elif rz == 90:
             dx = ox
             dy = 1 - oy
-            if map.xmirror:
+            if map_.xmirror:
                 dy = 1 - sy - oy
                 sy = -sy
-            if map.ymirror:
+            if map_.ymirror:
                 dx = sx + ox
                 sx = -sx
             tmp = sx
@@ -132,20 +139,20 @@ class Texture:
         elif rz == 180:
             dx = sx + ox
             dy = 1 - oy
-            if map.xmirror:
+            if map_.xmirror:
                 dx = ox
                 sx = -sx
-            if map.ymirror:
+            if map_.ymirror:
                 dy = 1 - sy - oy
                 sy = -sy
             rz = 180*VectorStatic.D
         elif rz == 270:
             dx = sx + ox
             dy = 1 - sy - oy
-            if map.xmirror:
+            if map_.xmirror:
                 dy = 1 - oy
                 sy = -sy
-            if map.ymirror:
+            if map_.ymirror:
                 dx = ox
                 sx = -sx
             tmp = sx

@@ -122,8 +122,8 @@ class DispGroup(CyclesGroup):
 
     def __init__(self):
         CyclesGroup.__init__(self)
-        self.insockets += ["Scale", "Midlevel", "UV"]
-        self.outsockets += ["Displacement"]
+        self.mat_group.insockets += ["Scale", "Midlevel", "UV"]
+        self.mat_group.outsockets += ["Displacement"]
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 4)
@@ -270,8 +270,8 @@ class MixNormalTextureGroup(CyclesGroup):
 
     def __init__(self):
         CyclesGroup.__init__(self)
-        self.insockets += ["Fac", "Color1", "Color2"]
-        self.outsockets += ["Color"]
+        self.mat_group.insockets += ["Fac", "Color1", "Color2"]
+        self.mat_group.outsockets += ["Color"]
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 8)

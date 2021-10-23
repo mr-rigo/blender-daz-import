@@ -12,21 +12,23 @@ class CyclesMaterial(Material):
 
     def __init__(self, fileref):
         Material.__init__(self, fileref)
-        
-        self.tree = None
+
+        self.tree: CyclesTree = None
         self.useEevee = False
 
     def __repr__(self):
         treetype = None
         if self.tree:
             treetype = self.tree.type
+
         geoname = None
         if self.geometry:
             geoname = self.geometry.name
+
         return ("<%sMaterial %s r:%s g:%s i:%s t:%s>" % (treetype, self.id, self.rna, geoname, self.ignore, self.hasAnyTexture()))
 
     def guessColor(self):
-        from daz_import.Elements.Material import MaterialStatic        
+        from daz_import.Elements.Material import MaterialStatic
         from daz_import.geometry import GeoNode
         from daz_import.Elements.Finger import isCharacter
 
@@ -39,24 +41,26 @@ class CyclesMaterial(Material):
                 color = Settings.skinColor_
             elif ob.data and ob.data.DazGraftGroup:
                 color = Settings.skinColor_
-        MaterialStatic.guessMaterialColor(self.rna, Settings.viewportColors, False, color)
+        MaterialStatic.guessMaterialColor(
+            self.rna, Settings.viewportColors, False, color)
 
-    def build(self, context):
+    def build(self, context, color=None):
         if self.dontBuild():
             return
-        Material.build(self, context)
-        self.tree = self.setupTree()
+        super().build(context)
+
+        self.tree = self.setupTree(color)
         self.tree.build()
 
-    def setupTree(self):
+    def setupTree(self, color=None) -> CyclesTree:
         from daz_import.Elements.Material.PbrTree import PbrTree
         from daz_import.Elements.Hair import getHairTree
-        
-        if self.isHair:            
+
+        if self.isHair:
             geo = self.geometry
             if geo and geo.isStrandHair:
                 geo.hairMaterials.append(self)
-            return getHairTree(self)
+            return getHairTree(self, color)
         elif self.metallic:
             return PbrTree(self)
         elif Settings.materialMethod == 'PRINCIPLED':

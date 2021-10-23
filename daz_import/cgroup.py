@@ -7,16 +7,19 @@ from daz_import.Elements.Material import MaterialGroup
 from daz_import.Elements.Color import ColorStatic
 
 from daz_import.Lib import Registrar
-from daz_import.Lib.Settings import Settings, Settings, Settings
+from daz_import.Lib.Settings import Settings
 from daz_import.Lib.Errors import IsMesh, ErrorsStatic, DazPropsOperator, DazError
 
 
-
-
 class CyclesGroup(MaterialGroup, CyclesTree):
-    def create(self, node, name, parent, ncols):
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.mat_group: MaterialGroup = self
+
+    def create(self, node, name, parent, ncols):        
         CyclesTree.__init__(self, parent.material)
         MaterialGroup.create(self, node, name, parent, ncols)
+        
 
     def __repr__(self):
         return ("<NodeGroup %s>" % self.group)
@@ -31,12 +34,13 @@ class ShellGroup(MaterialGroup):
     def __init__(self, push):
         MaterialGroup.__init__(self)
         self.push = push
-        self.insockets += ["Influence", "Cycles",
+        self.mat_group.insockets += ["Influence", "Cycles",
                            "Eevee", "UV", "Displacement"]
-        self.outsockets += ["Cycles", "Eevee", "Displacement"]
+        self.mat_group.outsockets += ["Cycles", "Eevee", "Displacement"]
 
     def create(self, node, name, parent):
         MaterialGroup.create(self, node, name, parent, 10)
+
         self.group.inputs.new("NodeSocketFloat", "Influence")
         self.group.inputs.new("NodeSocketShader", "Cycles")
         self.group.inputs.new("NodeSocketShader", "Eevee")
@@ -89,7 +93,7 @@ class OpaqueShellGroup(ShellGroup):
     def addOutput(self, mult, _transp, socket, slot):
         mix = self.addNode("ShaderNodeMixShader", 8)
         mix.inputs[0].default_value = 1
-        
+
         self.links.new(mult.outputs[0], mix.inputs[0])
         self.links.new(self.inputs.outputs[slot], mix.inputs[1])
         self.links.new(socket, mix.inputs[2])
@@ -156,8 +160,8 @@ class FresnelGroup(CyclesGroup):
 
     def __init__(self):
         CyclesGroup.__init__(self)
-        self.insockets += ["IOR", "Roughness", "Normal"]
-        self.outsockets += ["Fac"]
+        self.mat_group.insockets += ["IOR", "Roughness", "Normal"]
+        self.mat_group.outsockets += ["Fac"]
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 4)
@@ -219,8 +223,8 @@ class PBRSkinFresnelGroup(FresnelGroup):
 class MixGroup(CyclesGroup):
     def __init__(self):
         CyclesGroup.__init__(self)
-        self.insockets += ["Fac", "Cycles", "Eevee"]
-        self.outsockets += ["Cycles", "Eevee"]
+        self.mat_group.insockets += ["Fac", "Cycles", "Eevee"]
+        self.mat_group.outsockets += ["Cycles", "Eevee"]
 
     def create(self, node, name, parent, ncols):
         CyclesGroup.create(self, node, name, parent, ncols)
@@ -250,8 +254,8 @@ class MixGroup(CyclesGroup):
 class AddGroup(CyclesGroup):
     def __init__(self):
         CyclesGroup.__init__(self)
-        self.insockets += ["Cycles", "Eevee"]
-        self.outsockets += ["Cycles", "Eevee"]
+        self.mat_group.insockets += ["Cycles", "Eevee"]
+        self.mat_group.outsockets += ["Cycles", "Eevee"]
 
     def create(self, node, name, parent, ncols):
         CyclesGroup.create(self, node, name, parent, ncols)
@@ -277,7 +281,7 @@ class EmissionGroup(AddGroup):
 
     def __init__(self):
         AddGroup.__init__(self)
-        self.insockets += ["Color", "Strength"]
+        self.mat_group.insockets += ["Color", "Strength"]
 
     def create(self, node, name, parent):
         AddGroup.create(self, node, name, parent, 3)
@@ -297,8 +301,8 @@ class EmissionGroup(AddGroup):
 class OneSidedGroup(CyclesGroup):
     def __init__(self):
         CyclesGroup.__init__(self)
-        self.insockets += ["Cycles", "Eevee"]
-        self.outsockets += ["Cycles", "Eevee"]
+        self.mat_group.insockets += ["Cycles", "Eevee"]
+        self.mat_group.outsockets += ["Cycles", "Eevee"]
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 3)
@@ -330,7 +334,7 @@ class DiffuseGroup(MixGroup):
 
     def __init__(self):
         MixGroup.__init__(self)
-        self.insockets += ["Color", "Roughness", "Normal"]
+        self.mat_group.insockets += ["Color", "Roughness", "Normal"]
 
     def create(self, node, name, parent):
         MixGroup.create(self, node, name, parent, 3)
@@ -357,7 +361,7 @@ class GlossyGroup(MixGroup):
 
     def __init__(self):
         MixGroup.__init__(self)
-        self.insockets += ["Color", "Roughness", "Normal"]
+        self.mat_group.insockets += ["Color", "Roughness", "Normal"]
 
     def create(self, node, name, parent):
         MixGroup.create(self, node, name, parent, 3)
@@ -384,7 +388,7 @@ class TopCoatGroup(MixGroup):
 
     def __init__(self):
         MixGroup.__init__(self)
-        self.insockets += ["Color", "Roughness",
+        self.mat_group.insockets += ["Color", "Roughness",
                            "Bump", "Height", "Distance", "Normal"]
 
     def create(self, node, name, parent):
@@ -422,7 +426,7 @@ class RefractionGroup(MixGroup):
 
     def __init__(self):
         MixGroup.__init__(self)
-        self.insockets += [
+        self.mat_group.insockets += [
             "Thin Wall",
             "Refraction Color", "Refraction Roughness", "Refraction IOR",
             "Glossy Color", "Glossy Roughness", "Fresnel IOR", "Normal"]
@@ -530,7 +534,7 @@ class TransparentGroup(MixGroup):
 
     def __init__(self):
         MixGroup.__init__(self)
-        self.insockets += ["Color"]
+        self.mat_group.insockets += ["Color"]
 
     def create(self, node, name, parent):
         MixGroup.create(self, node, name, parent, 3)
@@ -555,7 +559,7 @@ class TranslucentGroup(MixGroup):
 
     def __init__(self):
         MixGroup.__init__(self)
-        self.insockets += [
+        self.mat_group.insockets += [
             "Color", "Gamma", "Scale", "Radius",
             "Cycles Mix Factor", "Eevee Mix Factor", "Normal"]
 
@@ -609,7 +613,7 @@ class MakeupGroup(MixGroup):
 
     def __init__(self):
         MixGroup.__init__(self)
-        self.insockets += ["Color", "Roughness", "Normal"]
+        self.mat_group.insockets += ["Color", "Roughness", "Normal"]
 
     def create(self, node, name, parent):
         MixGroup.create(self, node, name, parent, 3)
@@ -636,8 +640,8 @@ class RayClipGroup(CyclesGroup):
 
     def __init__(self):
         CyclesGroup.__init__(self)
-        self.insockets += ["Shader", "Color"]
-        self.outsockets += ["Shader"]
+        self.mat_group.insockets += ["Shader", "Color"]
+        self.mat_group.outsockets += ["Shader"]
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 4)
@@ -672,10 +676,10 @@ class DualLobeGroup(CyclesGroup):
 
     def __init__(self):
         CyclesGroup.__init__(self)
-        self.insockets += [
+        self.mat_group.insockets += [
             "Fac", "Cycles", "Eevee", "Weight", "IOR",
             "Roughness 1", "Roughness 2"]
-        self.outsockets += ["Cycles", "Eevee"]
+        self.mat_group.outsockets += ["Cycles", "Eevee"]
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 4)
@@ -763,10 +767,10 @@ class VolumeGroup(CyclesGroup):
 
     def __init__(self):
         CyclesGroup.__init__(self)
-        self.insockets += [
+        self.mat_group.insockets += [
             "Absorbtion Color", "Absorbtion Density", "Scatter Color",
             "Scatter Density", "Scatter Anisotropy"]
-        self.outsockets += ["Volume"]
+        self.mat_group.outsockets += ["Volume"]
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 3)
@@ -808,8 +812,8 @@ class NormalGroup(CyclesGroup):
 
     def __init__(self):
         CyclesGroup.__init__(self)
-        self.insockets += ["Strength", "Color"]
-        self.outsockets += ["Normal"]
+        self.mat_group.insockets += ["Strength", "Color"]
+        self.mat_group.outsockets += ["Normal"]
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 8)
@@ -934,8 +938,8 @@ class DetailGroup(CyclesGroup):
 
     def __init__(self):
         CyclesGroup.__init__(self)
-        self.insockets += ["Texture", "Strength", "Max", "Min", "Normal"]
-        self.outsockets += ["Displacement"]
+        self.mat_group.insockets += ["Texture", "Strength", "Max", "Min", "Normal"]
+        self.mat_group.outsockets += ["Displacement"]
 
 
 # ---------------------------------------------------------------------
@@ -946,8 +950,8 @@ class DisplacementGroup(CyclesGroup):
 
     def __init__(self):
         CyclesGroup.__init__(self)
-        self.insockets += ["Texture", "Strength", "Max", "Min", "Normal"]
-        self.outsockets += ["Displacement"]
+        self.mat_group.insockets += ["Texture", "Strength", "Max", "Min", "Normal"]
+        self.mat_group.outsockets += ["Displacement"]
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 4)
@@ -994,8 +998,8 @@ class DecalGroup(CyclesGroup):
 
     def __init__(self):
         CyclesGroup.__init__(self)
-        self.insockets += ["Color", "Influence"]
-        self.outsockets += ["Color", "Alpha", "Combined"]
+        self.mat_group.insockets += ["Color", "Influence"]
+        self.mat_group.outsockets += ["Color", "Alpha", "Combined"]
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 5)
@@ -1046,8 +1050,8 @@ class LieGroup(CyclesGroup):
 
     def __init__(self):
         CyclesGroup.__init__(self)
-        self.insockets += ["Vector", "Alpha"]
-        self.outsockets += ["Color"]
+        self.mat_group.insockets += ["Vector", "Alpha"]
+        self.mat_group.outsockets += ["Color"]
 
     def create(self, node, name, parent):
         CyclesGroup.create(self, node, name, parent, 6)
@@ -1167,7 +1171,7 @@ def setMixOperation(mix, map):
     else:
         print("MIX", 'asset', map.operation)
         # print("MIX", asset, map.operation)
-        
+
     return alpha
 
 # ----------------------------------------------------------

@@ -1,8 +1,14 @@
-import bpy
 # import math
 import os
-from typing import Type, Dict
-from mathutils import Vector, Matrix, Color
+from typing import Type, Dict, Any, List
+from mathutils import Vector
+
+import bpy
+from bpy.types import Material as BlenderMaterial
+from bpy.types import ShaderNode, NodeLink, \
+    ShaderNodeTexImage, ShaderNodeBump, NodeSocketVector,\
+    ShaderNodeGroup
+
 from daz_import.Elements.Color import ColorStatic
 from daz_import.Lib.Errors import DazError
 from daz_import.Lib.VectorStatic import VectorStatic
@@ -13,35 +19,37 @@ from daz_import.Elements.Material.Material import Material
 
 
 class CyclesTree(CyclesStatic):
-    
+
     def __init__(self, material: Material):
         self.material: Material = material
 
         self.type: str = 'CYCLES'
 
         self.ycoords = self.NCOLUMNS * [2 * self.YSIZE]
-        self.cycles = None
-        self.eevee = None
+        self.cycles: ShaderNodeGroup = None
+        self.eevee: ShaderNodeGroup = None
         self.column = 4
 
-        self.texnodes = {}
-        self.nodes = None
-        self.links = None
+        self.texnodes: Dict[str, BlenderMaterial] = {}
+        self.nodes: List[ShaderNode] = []
+        self.links: List[NodeLink] = None
         self.groups = {}
         self.liegroups = []
 
-        self.diffuseTex = None
+        self.diffuseTex: ShaderNodeTexImage = None
         self.fresnel = None
         self.normal = None
-        self.bump = None
-        self.bumpval = 0
-        self.bumptex = None
-        self.texco = None
 
-        self.texcos = {}
+        self.bump: ShaderNodeBump = None
+        self.bumpval = 0
+        self.bumptex: ShaderNodeTexImage = None
+
+        self.texco: NodeSocketVector = None
+
+        self.texcos: Dict[str, NodeSocketVector] = {}
 
         self.displacement = None
-        self.volume = None
+        self.volume: ShaderNodeGroup = None
         self.useCutout = False
         self.useTranslucency = False
 
@@ -62,25 +70,28 @@ class CyclesTree(CyclesStatic):
             col = self.column
 
         node = self.nodes.new(type=stype)
+
         node.location = ((col-2)*self.XSIZE, self.ycoords[col])
         self.ycoords[col] -= (self.YSIZE + size)
 
         if label:
             node.label = label
+
         if parent:
             node.parent = parent
 
         return node
 
-    def getTexco(self, uv):
+    def getTexco(self, uv: str):
         key = self.material.getUvKey(uv, self.texcos)
 
         if key is None:
             return self.texco
-        elif key not in self.texcos.keys():
+
+        if key not in self.texcos.keys():
             self.addUvNode(key, key)
 
-        return self.texcos[key]
+        return self.texcos.get(key)
 
     def getCyclesSocket(self):
         if out := self.cycles.outputs.get("Cycles"):
@@ -94,16 +105,17 @@ class CyclesTree(CyclesStatic):
         else:
             return self.eevee.outputs[0]
 
-    def addGroup(self, classdef: Type, name, col=None, size=0, args=[], force=False):
+    def addGroup(self, cls: Type, name, col=None, size=0, args=[], force=False):
+        from daz_import.cgroup import CyclesGroup
         if col is None:
             col = self.column
 
         node = self.addNode("ShaderNodeGroup", col, size=size)
-        group = classdef()
+        group: CyclesGroup = cls()
 
         if name in bpy.data.node_groups.keys() and not force:
-            tree = bpy.data.node_groups[name]
-            if group.checkSockets(tree):
+            tree = bpy.data.node_groups[name]            
+            if group.mat_group.checkSockets(tree):
                 node.node_tree = tree
                 return node
 
@@ -127,6 +139,7 @@ class CyclesTree(CyclesStatic):
         nname = f"{shname}_{self.material.name}"
 
         node = self.addNode("ShaderNodeGroup")
+
         node.width = 240
         node.name = nname
         node.label = shname
@@ -139,6 +152,7 @@ class CyclesTree(CyclesStatic):
             node.node_tree = shell.tree = shell.match.tree
             node.inputs["Influence"].default_value = 1.0
             return node
+
         if self.type == 'CYCLES':
             from daz_import.cgroup import OpaqueShellCyclesGroup, RefractiveShellCyclesGroup
             if shmat.refractive:
@@ -153,8 +167,10 @@ class CyclesTree(CyclesStatic):
                 group = OpaqueShellPbrGroup(push)
         else:
             raise RuntimeError("Bug Cycles type %s" % self.type)
+
         group.create(node, nname, self)
         group.addNodes((shmat, shell.uv))
+        
         node.inputs["Influence"].default_value = 1.0
         shell.tree = shmat.tree = node.node_tree
         shmat.geometry = self.material.geometry
@@ -236,9 +252,11 @@ class CyclesTree(CyclesStatic):
         mat.node_tree.nodes.clear()
         self.nodes = mat.node_tree.nodes
         self.links = mat.node_tree.links
+
         return self.addTexco(slot)
 
     def addTexco(self, slot):
+
         if self.material.useDefaultUvs:
             node = self.addNode("ShaderNodeTexCoord", 1)
             self.texco = node.outputs[slot]
@@ -262,8 +280,7 @@ class CyclesTree(CyclesStatic):
     def addUvNode(self, key, uvname):
         node = self.addNode("ShaderNodeUVMap", 1)
         node.uv_map = uvname
-        slot = "UV"
-        self.texcos[key] = node.outputs[slot]
+        self.texcos[key] = node.outputs["UV"]
 
     def mapTexco(self, ox, oy, kx, ky):
         if ox != 0 or oy != 0 or kx not in [0, 1] or ky not in [0, 1]:
@@ -279,9 +296,11 @@ class CyclesTree(CyclesStatic):
                 dy = oy/ky
 
             mapping = self.addMappingNode((dx, dy, sx, sy, 0), None)
-            if mapping:
-                self.linkVector(self.texco, mapping, 0)
-                self.texco = mapping
+            if not mapping:
+                return
+
+            self.linkVector(self.texco, mapping, 0)
+            self.texco = mapping
 
     def addMappingNode(self, data, map):
         dx, dy, sx, sy, rz = data
@@ -499,6 +518,7 @@ class CyclesTree(CyclesStatic):
             color, tex = self.getColorTex(
                 ["Diffuse Overlay Color"], "COLOR", ColorStatic.WHITE)
             from daz_import.cgroup import DiffuseGroup
+
             node = self.addGroup(DiffuseGroup, "DAZ Overlay")
             self.linkColor(tex, node, color, "Color")
             roughness, roughtex = self.getColorTex(

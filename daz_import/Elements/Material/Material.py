@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import bpy
 from bpy.types import Material as BlenderMat
-from typing import List, Dict
+
+from typing import List, Dict, Tuple
 from collections import OrderedDict, defaultdict
 from daz_import.Elements.Assets.Channels import Channels
 from daz_import.Lib.Settings import Settings
@@ -14,14 +15,12 @@ from daz_import.Elements.Assets import Asset
 from daz_import.Elements.Texture import Texture, Map
 from daz_import.Elements.UDIM import UDimStatic
 from daz_import.Elements.Color import ColorStatic
-
+from daz_import.geometry import GeoNode, Uvset
 
 class Material(Asset):
     loaded: Dict[str, BlenderMat] = {}
 
-    def __init__(self, fileref: str):
-        from daz_import.geometry import GeoNode, Uvset
-
+    def __init__(self, fileref: str):        
         super().__init__(fileref)
         self.channelsData: Channels = Channels(self)
 
@@ -53,7 +52,10 @@ class Material(Asset):
         self.translucent = False
         self.isHair = False
         self.isShellMat = False
-        self.enabled = {}
+
+        self.enabled: Dict[str, str] = {}
+
+        self.rna: BlenderMat = None
 
     def __repr__(self):
         return ("<Material %s %s %s>" % (self.id, self.geometry.name, self.rna))
@@ -65,16 +67,16 @@ class Material(Asset):
     @staticmethod
     def getMatName(index: str) -> str:
         index = unquote(index)
+
         key = index.split("#")[-1]
         words = key.rsplit("-", 1)
 
-        if (len(words) == 2 and
-                words[1].isdigit()):
+        if len(words) == 2 and words[1].isdigit():
             return words[0]
         else:
             return key
 
-    def addToGeoNode(self, geonode, key):
+    def addToGeoNode(self, geonode: GeoNode, key: str):                
         if key in geonode.materials.keys():
             msg = ("Duplicate geonode material: %s\n" % key +
                    "  %s\n" % geonode +
@@ -413,7 +415,7 @@ class Material(Asset):
         return Vector(lin)
 
     @staticmethod
-    def srgbToLinearGamma22(srgb):
+    def srgbToLinearGamma22(srgb) -> Vector:
         lin = []
         for s in srgb:
             if s < 0:
@@ -423,7 +425,7 @@ class Material(Asset):
             lin.append(l)
         return Vector(lin)
 
-    def getImageMod(self, attr, key):
+    def getImageMod(self, attr, key: str):
         channel: dict = self.channelsData.get_channel(*attr)
 
         if not channel:
@@ -432,7 +434,7 @@ class Material(Asset):
         if mod := channel.get("image_modification", {}):
             return mod.get(key)
 
-    def getTextures(self, channel: Dict):
+    def getTextures(self, channel: Dict) -> Tuple[List[Texture], List[Map]]:
         textures = []
         maps = []
 
@@ -452,7 +454,7 @@ class Material(Asset):
 
         return textures, maps
 
-    def hasTextures(self, channel):
+    def hasTextures(self, channel) -> bool:
         return self.getTextures(channel)[0] != []
 
     def hasAnyTexture(self):

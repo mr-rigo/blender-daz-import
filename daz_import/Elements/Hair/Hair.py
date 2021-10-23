@@ -208,11 +208,14 @@ class HairTree(CyclesTree):
 class FadeGroup(MaterialGroup, HairTree):
     def __init__(self):
         MaterialGroup.__init__(self)
-        self.insockets += ["Shader", "Intercept", "Random"]
-        self.outsockets += ["Shader"]
+        self.mat_group: MaterialGroup = self
+        self.mat_group.insockets += ["Shader", "Intercept", "Random"]
+        self.mat_group.outsockets += ["Shader"]
+        self.info = None
 
     def create(self, node, name, parent):
         HairTree.__init__(self, parent.material, ColorStatic.BLACK)
+
         MaterialGroup.create(self, node, name, parent, 4)
         self.group.inputs.new("NodeSocketShader", "Shader")
         self.group.inputs.new("NodeSocketFloat", "Intercept")
@@ -225,11 +228,14 @@ class FadeGroup(MaterialGroup, HairTree):
         ramp = self.addRamp(None, "Root Transparency",
                             (1, 1, 1, 0), (1, 1, 1, 1), endpos=0.15)
         maprange = self.addNode('ShaderNodeMapRange', col=1)
+
         maprange.inputs["From Min"].default_value = 0
         maprange.inputs["From Max"].default_value = 1
         maprange.inputs["To Min"].default_value = -0.1
         maprange.inputs["To Max"].default_value = 0.4
+
         self.links.new(self.inputs.outputs["Random"], maprange.inputs["Value"])
+        
         add = self.addSockets(
             ramp.outputs["Alpha"], maprange.outputs["Result"], col=2)
         transp = self.addNode('ShaderNodeBsdfTransparent', col=2)
@@ -374,7 +380,7 @@ class HairEeveeTree(HairTree):
     def buildLayer(self, uvname):
         self.initLayer()
         self.readColor(0.216)
-        
+
         pbr = self.active = self.addNode("ShaderNodeBsdfPrincipled")
         self.ycoords[self.column] -= 500
         ramp = self.addRamp(pbr, "Color", self.root,
@@ -385,7 +391,10 @@ class HairEeveeTree(HairTree):
         self.buildOutput()
 
 
-def getHairTree(dmat, color=ColorStatic.BLACK):
+def getHairTree(dmat, color=None):
+    if color is None:
+        color = ColorStatic.BLACK
+
     #print("Creating %s hair material" % Settings.hairMaterialMethod)
     if Settings.hairMaterialMethod_ == 'HAIR_PRINCIPLED':
         return HairPBRTree(dmat, color)

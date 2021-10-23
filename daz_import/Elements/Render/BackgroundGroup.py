@@ -3,18 +3,20 @@ from daz_import.cgroup import CyclesGroup
 
 class BackgroundGroup(CyclesGroup):
     def __init__(self):
-        CyclesGroup.__init__(self)
-        self.insockets += ["Color"]
-        self.outsockets += ["Fac", "Color"]
+        super().__init__()
+        self.mat_group.insockets += ["Color"]
+        self.mat_group.outsockets += ["Fac", "Color"]
 
     def create(self, node, name, parent):
-        CyclesGroup.create(self, node, name, parent, 2)
+        super().create(node, name, parent, 2)
+
         self.group.inputs.new("NodeSocketColor", "Color")
         self.group.outputs.new("NodeSocketFloat", "Fac")
         self.group.outputs.new("NodeSocketColor", "Color")
 
-    def addNodes(self, args=None):
+    def addNodes(self, _=None):
         lightpath = self.addNode("ShaderNodeLightPath", 1)
+        
         self.links.new(
             lightpath.outputs["Is Camera Ray"], self.outputs.inputs["Fac"])
         self.links.new(

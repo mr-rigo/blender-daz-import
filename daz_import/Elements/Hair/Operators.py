@@ -1,18 +1,15 @@
-import sys
+
 import bpy
 
-from mathutils import Vector
-from math import floor
 
-from daz_import.Lib.Settings import Settings, Settings, Settings
+from daz_import.Lib.Settings import Settings
 from daz_import.Lib.Errors import *
 from daz_import.utils import *
-from daz_import.Elements.Color import ColorStatic, ColorProp
-from daz_import.Elements.Material.Cycles import CyclesMaterial, CyclesTree
+from daz_import.Elements.Color import ColorProp
+
 from daz_import.Elements.Material.Data import EnumsHair
 from daz_import.Elements.Morph import Selector
 from daz_import.Lib import Registrar
-from daz_import.Elements.Material.MaterialGroup import MaterialGroup
 from .Hair import *
 from .HairStatic import HairStatic
 from .HairMaterial import HairMaterial

@@ -122,11 +122,12 @@ class WorldTree(CyclesTree):
         return mapping.outputs["Vector"]
 
     def getImage(self, channel, colorSpace):
-        assets, maps = self.material.getTextures(channel)
-        if not assets:
+        textures, _ = self.material.getTextures(channel)
+        if not textures:
             return None
-        asset = assets[0]
-        img = asset.images[colorSpace]
+
+        texture = textures[0]
+        img = texture.images.get(colorSpace)
         if img is None:
-            img = asset.buildCycles(colorSpace)
+            img = texture.buildCycles(colorSpace)
         return img

@@ -1,7 +1,8 @@
-import math
-from mathutils import Vector, Matrix
-from urllib.parse import unquote
 import os
+
+import math
+from mathutils import Vector
+from urllib.parse import unquote
 import bpy
 import bmesh
 from bpy.props import IntProperty, BoolProperty, \
@@ -11,9 +12,9 @@ from collections import OrderedDict
 
 from daz_import.Lib import Registrar
 from daz_import.Elements.Assets.Channels import Channels
-from daz_import.Lib.Settings import Settings, Settings, Settings
+from daz_import.Lib.Settings import Settings
 
-from daz_import.Elements.Node import Node, Instance
+from daz_import.Elements.Node import Node
 from daz_import.Lib.Files import SingleFile, DazFile
 from daz_import.Lib.BlenderStatic import BlenderStatic
 from daz_import.Lib.VectorStatic import VectorStatic
