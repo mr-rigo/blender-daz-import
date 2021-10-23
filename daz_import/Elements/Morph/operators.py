@@ -8,7 +8,7 @@ from daz_import.driver import DriverUser
 
 from daz_import.Lib import Json, Registrar
 from daz_import.Lib.BlenderStatic import BlenderStatic
-from daz_import.Lib.Settings import Settings, Settings, Settings
+from daz_import.Lib.Settings import Settings
 from daz_import.Lib.Files import SingleFile, MultiFile, DazImageFile, DatFile, JsonFile
 from daz_import.Elements.Animation import ActionOptions
 from daz_import.Elements.Groups import DazTextGroup, DazFloatGroup, DazStringGroup, DazMorphInfoGroup

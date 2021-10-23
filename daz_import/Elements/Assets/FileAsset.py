@@ -166,7 +166,7 @@ class FileAsset(Asset):
 
         if geos := struct.get("geometries"):
             geos: Dict
-            
+
             for n, geonode in enumerate(asset.geometries):
                 Assets.push(geonode, geonode.id)
                 inst = geonode.makeInstance(self.fileref, geos[n])
@@ -213,7 +213,7 @@ class FileAsset(Asset):
                                            self.fileref)
 
     def build(self, context):
-        print("BUILD FILE?", self)        
+        print("BUILD FILE?", self)
         for asset in self.assets:
             if asset.type == "figure":
                 asset.build(context)
@@ -338,3 +338,76 @@ class FileAsset(Asset):
                    "File asset:\n  %s\n" % file)
             # ErrorsStatic.report(msg, warnPaths=True, trigger=(3, 4))
         return None
+
+    def import_(self, context, filepath):
+        from daz_import.Lib.Files.DBZ import DBZ_Static
+        from daz_import.Elements.Node import transformDuplis
+        from daz_import.Lib.Utility import Progress, Updating
+        
+        Progress.show(20, 100)
+
+        print("Preprocessing...")
+
+        for asset, inst in self.nodes:
+            inst.preprocess(context)
+
+        if Settings.fitFile_:
+            DBZ_Static.fitToFile(filepath, self.nodes)
+
+        Progress.show(30, 100)
+
+        for asset, inst in self.nodes:
+            inst.preprocess2(context)
+
+        for asset, inst in self.modifiers:
+            asset.preprocess(inst)
+
+        print("Building objects...")
+
+        for asset in self.materials:
+            asset.build(context)
+
+        Progress.show(50, 100)
+
+        nnodes = len(self.nodes)
+        idx = 0
+
+        for asset, inst in self.nodes:
+            Progress.show(50 + int(idx*30/nnodes), 100)
+            idx += 1
+            asset.build(context, inst)      # Builds armature
+
+        Progress.show(80, 100)
+        nmods = len(self.modifiers)
+        idx = 0
+
+        for asset, inst in self.modifiers:
+            Progress.show(80 + int(idx*10/nmods), 100)
+            idx += 1
+            asset.build(context, inst)      # Builds morphs 1
+
+        Progress.show(90, 100)
+
+        for _, inst in self.nodes:
+            inst.poseRig(context)
+
+        for asset, inst in self.nodes:
+            inst.postbuild(context)
+
+        # Need to update scene before calculating object areas
+        Updating.scene(context)
+        for asset in self.materials:
+            asset.postbuild()
+
+        print("Postprocessing...")
+
+        for asset, inst in self.modifiers:
+            asset.postbuild(context, inst)
+
+        for _, inst in self.nodes:
+            inst.buildInstance(context)
+
+        for _, inst in self.nodes:
+            inst.finalize(context)
+
+        transformDuplis(context)

@@ -20,7 +20,7 @@ from daz_import.Elements.Material.Material import Material
 
 class CyclesTree(CyclesStatic):
 
-    def __init__(self, material: Material):
+    def __init__(self, material: Material):        
         self.material: Material = material
 
         self.type: str = 'CYCLES'

@@ -106,6 +106,7 @@ class ImportClass:
     @staticmethod
     def __import_file(filepath: str, context) -> None:
         Settings.scene_ = filepath
+
         t1 = perf_counter()
 
         Progress.start("\nLoading %s" % filepath)
@@ -125,75 +126,9 @@ class ImportClass:
 
         if file_asset is None:
             msg = ("File not found:  \n%s      " % filepath)
-            raise DazError(msg)
-
-        Progress.show(20, 100)
-
-        print("Preprocessing...")
-
-        for asset, inst in file_asset.nodes:
-            inst.preprocess(context)
-
-        if Settings.fitFile_:
-            DBZ_Static.fitToFile(filepath, file_asset.nodes)
-
-        Progress.show(30, 100)
-
-        for asset, inst in file_asset.nodes:
-            inst.preprocess2(context)
-
-        for asset, inst in file_asset.modifiers:
-            asset.preprocess(inst)
-
-        print("Building objects...")
-
-        for asset in file_asset.materials:
-            asset.build(context)
-
-        Progress.show(50, 100)
-
-        nnodes = len(file_asset.nodes)
-        idx = 0
-
-        for asset, inst in file_asset.nodes:
-            Progress.show(50 + int(idx*30/nnodes), 100)
-            idx += 1
-            asset.build(context, inst)      # Builds armature
-
-        Progress.show(80, 100)
-        nmods = len(file_asset.modifiers)
-        idx = 0
-
-        for asset, inst in file_asset.modifiers:
-            Progress.show(80 + int(idx*10/nmods), 100)
-            idx += 1
-            asset.build(context, inst)      # Builds morphs 1
-
-        Progress.show(90, 100)
-
-        for _, inst in file_asset.nodes:
-            inst.poseRig(context)
-
-        for asset, inst in file_asset.nodes:
-            inst.postbuild(context)
-
-        # Need to update scene before calculating object areas
-        Updating.scene(context)
-        for asset in file_asset.materials:
-            asset.postbuild()
-
-        print("Postprocessing...")
-
-        for asset, inst in file_asset.modifiers:            
-            asset.postbuild(context, inst)            
-
-        for _, inst in file_asset.nodes:
-            inst.buildInstance(context)
-
-        for _, inst in file_asset.nodes:
-            inst.finalize(context)
-
-        transformDuplis(context)
+            raise DazError(msg)        
+        
+        file_asset.import_(context, filepath)
 
         t2 = perf_counter()
         print('File "%s" loaded in %.3f seconds' % (filepath, t2-t1))
