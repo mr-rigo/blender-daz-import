@@ -205,18 +205,16 @@ class HairTree(CyclesTree):
         return add
 
 
-class FadeGroup(MaterialGroup, HairTree):
+class FadeGroup(HairTree):
     def __init__(self):
-        MaterialGroup.__init__(self)
-        self.mat_group: MaterialGroup = self
+        self.mat_group: MaterialGroup = MaterialGroup(self)
         self.mat_group.insockets += ["Shader", "Intercept", "Random"]
         self.mat_group.outsockets += ["Shader"]
         self.info = None
 
     def create(self, node, name, parent):
         HairTree.__init__(self, parent.material, ColorStatic.BLACK)
-
-        MaterialGroup.create(self, node, name, parent, 4)
+        self.mat_group.create(node, name, parent, 4)
         self.group.inputs.new("NodeSocketShader", "Shader")
         self.group.inputs.new("NodeSocketFloat", "Intercept")
         self.group.inputs.new("NodeSocketFloat", "Random")
@@ -235,7 +233,7 @@ class FadeGroup(MaterialGroup, HairTree):
         maprange.inputs["To Max"].default_value = 0.4
 
         self.links.new(self.inputs.outputs["Random"], maprange.inputs["Value"])
-        
+
         add = self.addSockets(
             ramp.outputs["Alpha"], maprange.outputs["Result"], col=2)
         transp = self.addNode('ShaderNodeBsdfTransparent', col=2)

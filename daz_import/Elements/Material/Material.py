@@ -17,10 +17,11 @@ from daz_import.Elements.UDIM import UDimStatic
 from daz_import.Elements.Color import ColorStatic
 from daz_import.geometry import GeoNode, Uvset
 
+
 class Material(Asset):
     loaded: Dict[str, BlenderMat] = {}
 
-    def __init__(self, fileref: str):        
+    def __init__(self, fileref: str):
         super().__init__(fileref)
         self.channelsData: Channels = Channels(self)
 
@@ -76,7 +77,7 @@ class Material(Asset):
         else:
             return key
 
-    def addToGeoNode(self, geonode: GeoNode, key: str):                
+    def addToGeoNode(self, geonode: GeoNode, key: str):
         if key in geonode.materials.keys():
             msg = ("Duplicate geonode material: %s\n" % key +
                    "  %s\n" % geonode +
@@ -440,7 +441,6 @@ class Material(Asset):
 
         for map_ in self.get_maps(channel):
             if map_.url:
-                # tex = map_.getTexture()
                 tex = Texture.create(map_)
             elif map_.literal_image:
                 tex = Texture(map_)
@@ -451,7 +451,7 @@ class Material(Asset):
 
             textures.append(tex)
             maps.append(map_)
-
+        
         return textures, maps
 
     def hasTextures(self, channel) -> bool:
@@ -471,6 +471,8 @@ class Material(Asset):
         return True
 
     def get_maps(self, channel: Dict) -> List[Map]:
+        from daz_import.Elements.Image import Images
+
         if isinstance(channel, tuple):
             channel = channel[0]
 
@@ -478,18 +480,14 @@ class Material(Asset):
 
         if channel is None:
             ...
-        elif image := channel.get("image"):
-            asset = self.get_children(url=image)
+        elif url := channel.get("image"):
+            asset: Images = self.get_children(url=url)
             if asset.maps:
                 maps = asset.maps
-        elif image_file := channel.get("image_file"):
+        elif url := channel.get("image_file"):
             map_ = Map({}, False)
-            map_.url = image_file
+            map_.url = url
             maps = [map_]
-        # elif "map" in channel.keys():
-        #     maps = Maps(self.fileref)
-        #     maps.parse(channel["map"])
-        #     halt
         elif cache := channel.get("literal_image"):
             map_ = Map(channel, False)
             map_.image = cache

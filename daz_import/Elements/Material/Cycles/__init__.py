@@ -7,7 +7,7 @@ NCOLUMNS = CyclesStatic.NCOLUMNS
 XSIZE = CyclesStatic.XSIZE
 YSIZE = CyclesStatic.YSIZE
 
-findTree = CyclesTree.create_cycles_tree
+findTree = CyclesStatic.create_cycles_tree
 findTexco = CyclesStatic.findTexco
 findNodes = CyclesStatic.findNodes
 findNode = CyclesStatic.findNode

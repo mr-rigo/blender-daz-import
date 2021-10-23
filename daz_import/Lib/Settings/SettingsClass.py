@@ -176,7 +176,7 @@ class SettingsClass(JsonObject):
         self.deflectors_ = {}
         # self.materials_ = {}
         self.textures_ = {}
-        self.gammas_ = {}
+        # self.gammas_ = {}
         self.customShapes_ = []
         self.singleUser_ = False
         self.scene_ = ""

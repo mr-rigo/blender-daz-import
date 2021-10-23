@@ -676,10 +676,6 @@ class MorphLoader(LoadMorph):
         if pgs is None:
             return
 
-        if isinstance(pgs, str):
-            import pdb
-            pdb.set_trace()
-
         if prop in pgs.keys():
             item = pgs[prop]
         else:

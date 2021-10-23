@@ -1,6 +1,6 @@
 import bpy
 from bpy.props import BoolProperty
-
+from daz_import.Elements.Texture import Map
 from daz_import.Elements.Material.Cycles import CyclesTree
 from daz_import.Elements.Material.PbrTree import PbrTree
 from daz_import.Elements.Material import MaterialGroup
@@ -11,15 +11,14 @@ from daz_import.Lib.Settings import Settings
 from daz_import.Lib.Errors import IsMesh, ErrorsStatic, DazPropsOperator, DazError
 
 
-class CyclesGroup(MaterialGroup, CyclesTree):
-    def __init__(self, *args):
-        super().__init__(*args)
-        self.mat_group: MaterialGroup = self
+class CyclesGroup(CyclesTree):
+    def __init__(self, mat=None):
+        super().__init__(mat)
+        self.mat_group = MaterialGroup(self)
 
-    def create(self, node, name, parent, ncols):        
-        CyclesTree.__init__(self, parent.material)
-        MaterialGroup.create(self, node, name, parent, ncols)
-        
+    def create(self, node, name, parent, ncols):
+        super().__init__(parent.material)
+        self.mat_group.create(node, name, parent, ncols)
 
     def __repr__(self):
         return ("<NodeGroup %s>" % self.group)
@@ -29,17 +28,18 @@ class CyclesGroup(MaterialGroup, CyclesTree):
 # ---------------------------------------------------------------------
 
 
-class ShellGroup(MaterialGroup):
+class ShellGroup:
 
     def __init__(self, push):
-        MaterialGroup.__init__(self)
+        self.group = None
         self.push = push
+        self.mat_group = MaterialGroup(self)
         self.mat_group.insockets += ["Influence", "Cycles",
-                           "Eevee", "UV", "Displacement"]
+                                     "Eevee", "UV", "Displacement"]
         self.mat_group.outsockets += ["Cycles", "Eevee", "Displacement"]
 
     def create(self, node, name, parent):
-        MaterialGroup.create(self, node, name, parent, 10)
+        self.mat_group.create(node, name, parent, 10)
 
         self.group.inputs.new("NodeSocketFloat", "Influence")
         self.group.inputs.new("NodeSocketShader", "Cycles")
@@ -159,12 +159,12 @@ class FresnelGroup(CyclesGroup):
     exponent = 0
 
     def __init__(self):
-        CyclesGroup.__init__(self)
+        super().__init__()
         self.mat_group.insockets += ["IOR", "Roughness", "Normal"]
         self.mat_group.outsockets += ["Fac"]
 
     def create(self, node, name, parent):
-        CyclesGroup.create(self, node, name, parent, 4)
+        super().create(node, name, parent, 4)
         self.group.inputs.new("NodeSocketFloat", "IOR")
         self.group.inputs.new("NodeSocketFloat", "Roughness")
         self.group.inputs.new("NodeSocketVector", "Normal")
@@ -222,12 +222,13 @@ class PBRSkinFresnelGroup(FresnelGroup):
 
 class MixGroup(CyclesGroup):
     def __init__(self):
-        CyclesGroup.__init__(self)
+        super().__init__()
         self.mat_group.insockets += ["Fac", "Cycles", "Eevee"]
         self.mat_group.outsockets += ["Cycles", "Eevee"]
 
     def create(self, node, name, parent, ncols):
-        CyclesGroup.create(self, node, name, parent, ncols)
+        super().create(node, name, parent, ncols)
+
         self.group.inputs.new("NodeSocketFloat", "Fac")
         self.group.inputs.new("NodeSocketShader", "Cycles")
         self.group.inputs.new("NodeSocketShader", "Eevee")
@@ -237,8 +238,10 @@ class MixGroup(CyclesGroup):
     def addNodes(self, args=None):
         self.mix1 = self.addNode("ShaderNodeMixShader", self.ncols-1)
         self.mix1.label = "Cycles"
+
         self.mix2 = self.addNode("ShaderNodeMixShader", self.ncols-1)
         self.mix2.label = "Eevee"
+
         self.links.new(self.inputs.outputs["Fac"], self.mix1.inputs[0])
         self.links.new(self.inputs.outputs["Fac"], self.mix2.inputs[0])
         self.links.new(self.inputs.outputs["Cycles"], self.mix1.inputs[1])
@@ -253,12 +256,14 @@ class MixGroup(CyclesGroup):
 
 class AddGroup(CyclesGroup):
     def __init__(self):
-        CyclesGroup.__init__(self)
+        self.add1 = None
+        self.add2 = None
+        super().__init__()
         self.mat_group.insockets += ["Cycles", "Eevee"]
         self.mat_group.outsockets += ["Cycles", "Eevee"]
 
     def create(self, node, name, parent, ncols):
-        CyclesGroup.create(self, node, name, parent, ncols)
+        super().create(node, name, parent, ncols)
         self.group.inputs.new("NodeSocketShader", "Cycles")
         self.group.inputs.new("NodeSocketShader", "Eevee")
         self.group.outputs.new("NodeSocketShader", "Cycles")
@@ -267,6 +272,7 @@ class AddGroup(CyclesGroup):
     def addNodes(self, args=None):
         self.add1 = self.addNode("ShaderNodeAddShader", 2)
         self.add2 = self.addNode("ShaderNodeAddShader", 2)
+
         self.links.new(self.inputs.outputs["Cycles"], self.add1.inputs[0])
         self.links.new(self.inputs.outputs["Eevee"], self.add2.inputs[0])
         self.links.new(self.add1.outputs[0], self.outputs.inputs["Cycles"])
@@ -300,12 +306,12 @@ class EmissionGroup(AddGroup):
 
 class OneSidedGroup(CyclesGroup):
     def __init__(self):
-        CyclesGroup.__init__(self)
+        super().__init__()
         self.mat_group.insockets += ["Cycles", "Eevee"]
         self.mat_group.outsockets += ["Cycles", "Eevee"]
 
     def create(self, node, name, parent):
-        CyclesGroup.create(self, node, name, parent, 3)
+        super().create(node, name, parent, 3)
         self.group.inputs.new("NodeSocketShader", "Cycles")
         self.group.inputs.new("NodeSocketShader", "Eevee")
         self.group.outputs.new("NodeSocketShader", "Cycles")
@@ -389,7 +395,7 @@ class TopCoatGroup(MixGroup):
     def __init__(self):
         MixGroup.__init__(self)
         self.mat_group.insockets += ["Color", "Roughness",
-                           "Bump", "Height", "Distance", "Normal"]
+                                     "Bump", "Height", "Distance", "Normal"]
 
     def create(self, node, name, parent):
         MixGroup.create(self, node, name, parent, 4)
@@ -558,7 +564,7 @@ class TransparentGroup(MixGroup):
 class TranslucentGroup(MixGroup):
 
     def __init__(self):
-        MixGroup.__init__(self)
+        super().__init__()
         self.mat_group.insockets += [
             "Color", "Gamma", "Scale", "Radius",
             "Cycles Mix Factor", "Eevee Mix Factor", "Normal"]
@@ -639,12 +645,12 @@ class MakeupGroup(MixGroup):
 class RayClipGroup(CyclesGroup):
 
     def __init__(self):
-        CyclesGroup.__init__(self)
+        super().__init__()
         self.mat_group.insockets += ["Shader", "Color"]
         self.mat_group.outsockets += ["Shader"]
 
     def create(self, node, name, parent):
-        CyclesGroup.create(self, node, name, parent, 4)
+        super().create(node, name, parent, 4)
         self.group.inputs.new("NodeSocketShader", "Shader")
         self.group.inputs.new("NodeSocketColor", "Color")
         self.group.outputs.new("NodeSocketShader", "Shader")
@@ -675,14 +681,14 @@ class RayClipGroup(CyclesGroup):
 class DualLobeGroup(CyclesGroup):
 
     def __init__(self):
-        CyclesGroup.__init__(self)
+        super().__init__()
         self.mat_group.insockets += [
             "Fac", "Cycles", "Eevee", "Weight", "IOR",
             "Roughness 1", "Roughness 2"]
         self.mat_group.outsockets += ["Cycles", "Eevee"]
 
     def create(self, node, name, parent):
-        CyclesGroup.create(self, node, name, parent, 4)
+        super().create(node, name, parent, 4)
         self.group.inputs.new("NodeSocketFloat", "Fac")
         self.group.inputs.new("NodeSocketShader", "Cycles")
         self.group.inputs.new("NodeSocketShader", "Eevee")
@@ -766,14 +772,14 @@ class DualLobeGroupPBRSkin(DualLobeGroup):
 class VolumeGroup(CyclesGroup):
 
     def __init__(self):
-        CyclesGroup.__init__(self)
+        super().__init__()
         self.mat_group.insockets += [
             "Absorbtion Color", "Absorbtion Density", "Scatter Color",
             "Scatter Density", "Scatter Anisotropy"]
         self.mat_group.outsockets += ["Volume"]
 
     def create(self, node, name, parent):
-        CyclesGroup.create(self, node, name, parent, 3)
+        super().create(node, name, parent, 3)
         self.group.inputs.new("NodeSocketColor", "Absorbtion Color")
         self.group.inputs.new("NodeSocketFloat", "Absorbtion Density")
         self.group.inputs.new("NodeSocketColor", "Scatter Color")
@@ -811,12 +817,12 @@ class VolumeGroup(CyclesGroup):
 class NormalGroup(CyclesGroup):
 
     def __init__(self):
-        CyclesGroup.__init__(self)
+        super().__init__()
         self.mat_group.insockets += ["Strength", "Color"]
         self.mat_group.outsockets += ["Normal"]
 
     def create(self, node, name, parent):
-        CyclesGroup.create(self, node, name, parent, 8)
+        super().create(node, name, parent, 8)
 
         strength = self.group.inputs.new("NodeSocketFloat", "Strength")
         strength.default_value = 1.0
@@ -937,8 +943,9 @@ class NormalGroup(CyclesGroup):
 class DetailGroup(CyclesGroup):
 
     def __init__(self):
-        CyclesGroup.__init__(self)
-        self.mat_group.insockets += ["Texture", "Strength", "Max", "Min", "Normal"]
+        super().__init__()
+        self.mat_group.insockets += ["Texture",
+                                     "Strength", "Max", "Min", "Normal"]
         self.mat_group.outsockets += ["Displacement"]
 
 
@@ -949,12 +956,13 @@ class DetailGroup(CyclesGroup):
 class DisplacementGroup(CyclesGroup):
 
     def __init__(self):
-        CyclesGroup.__init__(self)
-        self.mat_group.insockets += ["Texture", "Strength", "Max", "Min", "Normal"]
+        super().__init__()
+        self.mat_group.insockets += ["Texture",
+                                     "Strength", "Max", "Min", "Normal"]
         self.mat_group.outsockets += ["Displacement"]
 
     def create(self, node, name, parent):
-        CyclesGroup.create(self, node, name, parent, 4)
+        super().create(node, name, parent, 4)
         self.group.inputs.new("NodeSocketFloat", "Texture")
         self.group.inputs.new("NodeSocketFloat", "Strength")
         self.group.inputs.new("NodeSocketFloat", "Max")
@@ -997,12 +1005,12 @@ class DisplacementGroup(CyclesGroup):
 class DecalGroup(CyclesGroup):
 
     def __init__(self):
-        CyclesGroup.__init__(self)
+        super().__init__()
         self.mat_group.insockets += ["Color", "Influence"]
         self.mat_group.outsockets += ["Color", "Alpha", "Combined"]
 
     def create(self, node, name, parent):
-        CyclesGroup.create(self, node, name, parent, 5)
+        super().create(node, name, parent, 5)
         self.group.inputs.new("NodeSocketColor", "Color")
         self.group.inputs.new("NodeSocketFloat", "Influence")
         self.group.outputs.new("NodeSocketColor", "Color")
@@ -1049,12 +1057,13 @@ class DecalGroup(CyclesGroup):
 class LieGroup(CyclesGroup):
 
     def __init__(self):
-        CyclesGroup.__init__(self)
+        super().__init__()
         self.mat_group.insockets += ["Vector", "Alpha"]
         self.mat_group.outsockets += ["Color"]
 
     def create(self, node, name, parent):
-        CyclesGroup.create(self, node, name, parent, 6)
+        super().create(node, name, parent, 6)
+
         self.group.inputs.new("NodeSocketVector", "Vector")
         self.texco = self.inputs.outputs[0]
         self.group.inputs.new("NodeSocketFloat", "Alpha")
@@ -1062,6 +1071,7 @@ class LieGroup(CyclesGroup):
 
     def addTextureNodes(self, assets, maps, colorSpace):
         texnodes = []
+
         for idx, asset in enumerate(assets):
             texnode, isnew = self.addSingleTexture(
                 3, asset, maps[idx], colorSpace)
@@ -1084,95 +1094,100 @@ class LieGroup(CyclesGroup):
                     self.inputs.outputs["Vector"], innode.inputs["Vector"])
             texnodes.append([texnode])
 
-        if texnodes:
-            nassets = len(assets)
-            for idx in range(1, nassets):
-                map = maps[idx]
-                if map.invert:
-                    inv = self.addNode("ShaderNodeInvert", 4)
-                    node = texnodes[idx][0]
-                    self.links.new(node.outputs[0], inv.inputs["Color"])
-                    texnodes[idx].append(inv)
+        if not texnodes:
+            return
 
-            texnode = texnodes[0][-1]
-            alphamix = self.addNode("ShaderNodeMixRGB", 6)
-            alphamix.blend_type = 'MIX'
-            alphamix.inputs[0].default_value = 1.0
-            self.links.new(self.inputs.outputs["Alpha"], alphamix.inputs[0])
-            self.links.new(texnode.outputs["Color"], alphamix.inputs[1])
+        assets_len = len(assets)
 
-            masked = False
-            for idx in range(1, nassets):
-                map = maps[idx]
-                if map.ismask:
-                    if idx == nassets-1:
-                        continue
-                    # ShaderNodeMixRGB
-                    mix = self.addNode("ShaderNodeMixRGB", 5)
-                    mix.blend_type = 'MULTIPLY'
-                    mix.use_alpha = False
-                    mask = texnodes[idx][-1]
-                    self.setColorSpace(mask, 'NONE')
-                    self.links.new(mask.outputs["Color"], mix.inputs[0])
-                    self.links.new(texnode.outputs["Color"], mix.inputs[1])
-                    self.links.new(
-                        texnodes[idx+1][-1].outputs["Color"], mix.inputs[2])
-                    texnode = mix
-                    masked = True
-                elif not masked:
-                    mix = self.addNode("ShaderNodeMixRGB", 5)
-                    alpha = setMixOperation(mix, map)
-                    mix.inputs[0].default_value = alpha
-                    node = texnodes[idx][-1]
-                    base = texnodes[idx][0]
-                    if alpha != 1:
-                        node = self.multiplyScalarTex(alpha, base, "Alpha", 4)
-                        self.links.new(node.outputs[0], mix.inputs[0])
-                    elif "Alpha" in base.outputs.keys():
-                        self.links.new(base.outputs["Alpha"], mix.inputs[0])
-                    else:
-                        print("No LIE alpha:", base)
-                        mix.inputs[0].default_value = alpha
-                    mix.use_alpha = True
-                    self.links.new(texnode.outputs["Color"], mix.inputs[1])
-                    self.links.new(
-                        texnodes[idx][-1].outputs["Color"], mix.inputs[2])
-                    texnode = mix
-                    masked = False
+        for idx in range(1, assets_len):
+            map = maps[idx]
+            if map.invert:
+                inv = self.addNode("ShaderNodeInvert", 4)
+                node = texnodes[idx][0]
+                self.links.new(node.outputs[0], inv.inputs["Color"])
+                texnodes[idx].append(inv)
+
+        texnode = texnodes[0][-1]
+        alphamix = self.addNode("ShaderNodeMixRGB", 6)
+        alphamix.blend_type = 'MIX'
+        alphamix.inputs[0].default_value = 1.0
+
+        self.links.new(self.inputs.outputs["Alpha"], alphamix.inputs[0])
+        self.links.new(texnode.outputs["Color"], alphamix.inputs[1])
+
+        masked = False
+
+        for idx in range(1, assets_len):
+            map = maps[idx]
+            if map.ismask:
+                if idx == assets_len-1:
+                    continue
+                # ShaderNodeMixRGB
+                mix = self.addNode("ShaderNodeMixRGB", 5)
+                mix.blend_type = 'MULTIPLY'
+                mix.use_alpha = False
+                mask = texnodes[idx][-1]
+                self.setColorSpace(mask, 'NONE')
+                self.links.new(mask.outputs["Color"], mix.inputs[0])
+                self.links.new(texnode.outputs["Color"], mix.inputs[1])
+                self.links.new(
+                    texnodes[idx+1][-1].outputs["Color"], mix.inputs[2])
+                texnode = mix
+                masked = True
+            elif not masked:
+                mix = self.addNode("ShaderNodeMixRGB", 5)
+                alpha = setMixOperation(mix, map)
+                mix.inputs[0].default_value = alpha
+                node = texnodes[idx][-1]
+                base = texnodes[idx][0]
+                if alpha != 1:
+                    node = self.multiplyScalarTex(alpha, base, "Alpha", 4)
+                    self.links.new(node.outputs[0], mix.inputs[0])
+                elif "Alpha" in base.outputs.keys():
+                    self.links.new(base.outputs["Alpha"], mix.inputs[0])
                 else:
-                    masked = False
+                    print("No LIE alpha:", base)
+                    mix.inputs[0].default_value = alpha
+                mix.use_alpha = True
+                self.links.new(texnode.outputs["Color"], mix.inputs[1])
+                self.links.new(
+                    texnodes[idx][-1].outputs["Color"], mix.inputs[2])
+                texnode = mix
+                masked = False
+            else:
+                masked = False
 
-            self.links.new(texnode.outputs[0], alphamix.inputs[2])
-            self.links.new(alphamix.outputs[0], self.outputs.inputs["Color"])
+        self.links.new(texnode.outputs[0], alphamix.inputs[2])
+        self.links.new(alphamix.outputs[0], self.outputs.inputs["Color"])
 
-    def mapTexture(self, asset, map):
-        if asset.hasMapping(map):
-            data = asset.getMapping(self.material, map)
-            return self.addMappingNode(data, map)
+    def mapTexture(self, asset, map_):
+        if not asset.hasMapping(map_):
+            return
+        data = asset.getMapping(self.material, map_)
+        return self.addMappingNode(data, map_)
 
 
-def setMixOperation(mix, map):
-    alpha = 1
-    op = map.operation
-    alpha = map.transparency
+def setMixOperation(mix, map_):
+    # alpha = 1
+    op = map_.operation
 
     if op == "multiply":
         mix.blend_type = 'MULTIPLY'
-        useAlpha = True
+        # useAlpha = True
     elif op == "add":
         mix.blend_type = 'ADD'
-        useAlpha = False
+        # useAlpha = False
     elif op == "subtract":
         mix.blend_type = 'SUBTRACT'
-        useAlpha = False
+        # useAlpha = False
     elif op == "alpha_blend":
         mix.blend_type = 'MIX'
-        useAlpha = True
+        # useAlpha = True
     else:
-        print("MIX", 'asset', map.operation)
+        print("MIX", 'asset', map_.operation)
         # print("MIX", asset, map.operation)
 
-    return alpha
+    return map_.transparency
 
 # ----------------------------------------------------------
 #   Make shader group

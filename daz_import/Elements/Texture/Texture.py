@@ -36,7 +36,7 @@ class Texture:
         key = self.getName()
 
         if key:
-            img = self.images["COLOR"] = self.map.build()
+            img = self.images["COLOR"] = self.map.get_image()
             if img:
                 tex = self.rna = bpy.data.textures.new(img.name, 'IMAGE')
                 tex.image = img
@@ -56,18 +56,17 @@ class Texture:
         return self
 
     def buildCycles(self, colorSpace):
+        img = None
+
         if self.built[colorSpace]:
             return self.images[colorSpace]
         elif colorSpace == "COLOR" and self.images["NONE"]:
             img = self.images["NONE"].copy()
         elif colorSpace == "NONE" and self.images["COLOR"]:
             img = self.images["COLOR"].copy()
-        elif self.map.url:
-            img = self.map.build()
-        elif self.map.image:
-            img = self.map.image
-        else:
-            img = None
+        elif self.map.url or self.map.image:
+            img = self.map.get_image()
+
         if img:
             if colorSpace == "COLOR":
                 img.colorspace_settings.name = "sRGB"
@@ -75,6 +74,7 @@ class Texture:
                 img.colorspace_settings.name = "Non-Color"
             else:
                 img.colorspace_settings.name = colorSpace
+
         self.images[colorSpace] = img
         self.built[colorSpace] = True
         return img

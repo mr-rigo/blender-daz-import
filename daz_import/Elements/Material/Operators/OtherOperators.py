@@ -387,20 +387,25 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, LaunchEditor, IsMesh)
 
     def run(self, context):
         from daz_import.cgroup import DecalGroup
-        from daz_import.Elements.Material.Cycles import findTree
+        from daz_import.Elements.Material.Cycles import CyclesStatic
 
         img = bpy.data.images.load(self.filepath)
+        
         if img is None:
             raise DazError("Unable to load file %s" % self.filepath)
+
         img.colorspace_settings.name = "Non-Color"
         img.colorspace_settings.name = "sRGB"
 
         fname = os.path.splitext(os.path.basename(self.filepath))[0]
         ob = context.object
+
         mat = ob.data.materials[ob.active_material_index]
-        tree = findTree(mat)
-        empty = bpy.data.objects.new(fname, None)
+
+        tree = CyclesStatic.create_cycles_tree(mat)        
         coll = BlenderStatic.collection(ob)
+
+        empty = bpy.data.objects.new(fname, None)
         coll.objects.link(empty)
 
         for item in self.shows:
@@ -424,6 +429,7 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, LaunchEditor, IsMesh)
     @staticmethod
     def getFromToSockets(tree, nodeType, slot):
         from daz_import.Elements.Material.Cycles import findNodes
+        
         for link in tree.links.values():
             if link.to_node and link.to_node.type == nodeType:
                 if link.to_socket == link.to_node.inputs[slot]:

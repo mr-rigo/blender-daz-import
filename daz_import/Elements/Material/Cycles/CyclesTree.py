@@ -7,7 +7,7 @@ import bpy
 from bpy.types import Material as BlenderMaterial
 from bpy.types import ShaderNode, NodeLink, \
     ShaderNodeTexImage, ShaderNodeBump, NodeSocketVector,\
-    ShaderNodeGroup
+    ShaderNodeGroup, ShaderNodeTexImage,ShaderNodeMapping
 
 from daz_import.Elements.Color import ColorStatic
 from daz_import.Lib.Errors import DazError
@@ -33,6 +33,7 @@ class CyclesTree(CyclesStatic):
         self.texnodes: Dict[str, BlenderMaterial] = {}
         self.nodes: List[ShaderNode] = []
         self.links: List[NodeLink] = None
+        self.group = None
         self.groups = {}
         self.liegroups = []
 
@@ -59,13 +60,13 @@ class CyclesTree(CyclesStatic):
     def getValue(self, channel, default):
         return self.material.channelsData.getValue(channel, default)
 
-    def isEnabled(self, key):
+    def isEnabled(self, key) -> bool:
         return self.material.enabled.get(key)
 
     def getColor(self, channel, default):
         return self.material.getColor(channel, default)
 
-    def addNode(self, stype, col=None, size=0, label=None, parent=None):
+    def addNode(self, stype, col=None, size=0, label=None, parent=None) -> ShaderNode:
         if col is None:
             col = self.column
 
@@ -79,10 +80,9 @@ class CyclesTree(CyclesStatic):
 
         if parent:
             node.parent = parent
-
         return node
 
-    def getTexco(self, uv: str):
+    def getTexco(self, uv: str) -> NodeSocketVector:
         key = self.material.getUvKey(uv, self.texcos)
 
         if key is None:
@@ -107,6 +107,7 @@ class CyclesTree(CyclesStatic):
 
     def addGroup(self, cls: Type, name, col=None, size=0, args=[], force=False):
         from daz_import.cgroup import CyclesGroup
+        
         if col is None:
             col = self.column
 
@@ -178,7 +179,7 @@ class CyclesTree(CyclesStatic):
 
     def build(self):
         self.makeTree()
-        self.buildLayer("")
+        self.buildLayer()
         self.buildCutout()
         self.buildVolume()
         self.buildDisplacementNodes()
@@ -217,7 +218,7 @@ class CyclesTree(CyclesStatic):
             self.displacement = node.outputs["Displacement"]
             self.ycoords[self.column] -= 50
 
-    def buildLayer(self, uvname):
+    def buildLayer(self, uvname = ''):
         self.buildNormal(uvname)
         self.buildBump()
         self.buildDetail(uvname)
@@ -302,7 +303,7 @@ class CyclesTree(CyclesStatic):
             self.linkVector(self.texco, mapping, 0)
             self.texco = mapping
 
-    def addMappingNode(self, data, map):
+    def addMappingNode(self, data, map) -> ShaderNodeMapping:
         dx, dy, sx, sy, rz = data
 
         if (sx != 1 or sy != 1 or dx != 0 or dy != 0 or rz != 0):
@@ -326,12 +327,7 @@ class CyclesTree(CyclesStatic):
             return mapping
         return None
 
-    @classmethod
-    def create_cycles_tree(cls, mat):
-        tree = cls(None)
-        tree.nodes = mat.node_tree.nodes
-        tree.links = mat.node_tree.links
-        return tree
+
 
 # -------------------------------------------------------------
 #   Normal
@@ -1146,14 +1142,16 @@ class CyclesTree(CyclesStatic):
             self.volume.width = 240
             Settings.usedFeatures_["Volume"] = True
 
-    def getSSSInfo(self, transcolor):
+    def getSSSInfo(self, _):
         if self.material.shader == 'UBER_IRAY':
             sssmode = self.getValue(["SSS Mode"], 0)
         elif self.material.shader == 'PBRSKIN':
             sssmode = 1
         else:
             sssmode = 0
+
         # [ "Mono", "Chromatic" ]
+
         if sssmode == 1:
             ssscolor, ssstex = self.getColorTex(
                 "getChannelSSSColor", "COLOR", ColorStatic.BLACK)
@@ -1163,12 +1161,16 @@ class CyclesTree(CyclesStatic):
 
     def buildVolumeTransmission(self, transcolor, transtex):
         from daz_import.cgroup import VolumeGroup
+
         dist = self.getValue(["Transmitted Measurement Distance"], 0.0)
-        if not (ColorStatic.isBlack(transcolor) or ColorStatic.isWhite(transcolor) or dist == 0.0):
-            self.volume = self.addGroup(VolumeGroup, "DAZ Volume")
-            self.volume.inputs["Absorbtion Density"].default_value = 100/dist
-            self.linkColor(transtex, self.volume,
-                           transcolor, "Absorbtion Color")
+        
+        if ColorStatic.isBlack(transcolor) or ColorStatic.isWhite(transcolor) or dist == 0.0:
+            return
+
+        self.volume = self.addGroup(VolumeGroup, "DAZ Volume")
+        self.volume.inputs["Absorbtion Density"].default_value = 100/dist
+        self.linkColor(transtex, self.volume,
+                        transcolor, "Absorbtion Color")
 
     def buildVolumeSubSurface(self, sssmode, ssscolor, ssstex):
         from daz_import.cgroup import VolumeGroup
@@ -1179,6 +1181,7 @@ class CyclesTree(CyclesStatic):
 
         sss = self.getValue(["SSS Amount"], 0.0)
         dist = self.getValue("getChannelScatterDist", 0.0)
+
         if not (sssmode == 0 or ColorStatic.isBlack(ssscolor) or ColorStatic.isWhite(ssscolor) or dist == 0.0):
             color, tex = self.invertColor(ssscolor, ssstex, 6)
             if self.volume is None:
@@ -1277,26 +1280,31 @@ class CyclesTree(CyclesStatic):
             if not hasMap:
                 self.setTexNode(imgname, texnode, colorSpace)
         return texnode, isnew
-
-    def addTextureNode(self, col, img, imgname, colorSpace):
+    
+    def addTextureNode(self, col, img, imgname, colorSpace) -> ShaderNodeTexImage:
         node = self.addNode("ShaderNodeTexImage", col)
+
         node.image = img
         node.interpolation = Settings.imageInterpolation
         node.label = imgname.rsplit("/", 1)[-1]
+
         self.setColorSpace(node, colorSpace)
         node.name = imgname
+
         if hasattr(node, "image_user"):
             node.image_user.frame_duration = 1
             node.image_user.frame_current = 1
+        
         return node
-
-    def setColorSpace(self, node, colorSpace):
+    
+    @staticmethod
+    def setColorSpace(node, colorSpace):
         if hasattr(node, "color_space"):
             node.color_space = colorSpace
 
-    def addImageTexNode(self, filepath, tname, col):
+    def addImageTexNode(self, filepath: str, tname, col) -> ShaderNodeTexImage:
         img = bpy.data.images.load(filepath)
-        img.name = os.path.splitext(os.path.basename(filepath))[0]
+        img.name = os.path.splitext(os.path.basename(filepath))[0]        
         img.colorspace_settings.name = "Non-Color"
         return self.addTextureNode(col, img, tname, "NONE")
 
@@ -1324,56 +1332,69 @@ class CyclesTree(CyclesStatic):
 
     def addTexImageNode(self, channel, colorSpace=None):
         col = self.column-2
-        assets, maps = self.material.getTextures(channel)
-        if len(assets) != len(maps):
-            print(assets)
-            print(maps)
+        textures, maps = self.material.getTextures(channel)
+        
+        if len(textures) != len(maps):
+            print(textures, '\n', maps)            
             raise DazError("Bug: Num assets != num maps")
-        elif len(assets) == 0:
+        elif len(textures) == 0:
             return None
-        elif len(assets) == 1:
+        elif len(textures) == 1:
             texnode, isnew = self.addSingleTexture(
-                col, assets[0], maps[0], colorSpace)
+                col, textures[0], maps[0], colorSpace)
             if isnew:
                 self.linkVector(self.texco, texnode)
             return texnode
 
         from daz_import.cgroup import LieGroup
+
         node = self.addNode("ShaderNodeGroup", col)
         node.width = 240
+        
         try:
-            name = os.path.basename(assets[0].map.url)
+            name = os.path.basename(textures[0].map.url)
         except:
             name = "Group"
+        
         group = LieGroup()
         group.create(node, name, self)
         self.linkVector(self.texco, node)
-        group.addTextureNodes(assets, maps, colorSpace)
-        node.inputs["Alpha"].default_value = 1
+        group.addTextureNodes(textures, maps, colorSpace)
+
+        node.inputs["Alpha"].default_value = 1        
         self.liegroups.append(node)
+        
         return node
 
     def mixTexs(self, op, tex1, tex2, slot1=0, slot2=0, color1=None, color2=None, fac=1, factex=None):
+        
         if fac < 1 or factex:
             pass
         elif tex1 is None:
             return tex2
         elif tex2 is None:
             return tex1
+
         mix = self.addNode("ShaderNodeMixRGB", self.column-1)
         mix.blend_type = op
         mix.use_alpha = False
         mix.inputs[0].default_value = fac
+        
         if factex:
             self.links.new(factex.outputs[0], mix.inputs[0])
+
         if color1:
             mix.inputs[1].default_value[0:3] = color1
+
         if tex1:
             self.links.new(tex1.outputs[slot1], mix.inputs[1])
+
         if color2:
             mix.inputs[2].default_value[0:3] = color2
+
         if tex2:
             self.links.new(tex2.outputs[slot2], mix.inputs[2])
+
         return mix
 
     def mixWithActive(self, fac, tex, shader, useAlpha=False, keep=False):

@@ -1,5 +1,4 @@
 from __future__ import annotations
-import pdb
 from mathutils import Vector, Matrix
 from typing import Dict, Any, List, Tuple
 from daz_import.Lib.Settings import Settings
@@ -214,7 +213,7 @@ class FileAsset(Asset):
                                            self.fileref)
 
     def build(self, context):
-        print("BUILD FILE?", self)
+        print("BUILD FILE?", self)        
         for asset in self.assets:
             if asset.type == "figure":
                 asset.build(context)

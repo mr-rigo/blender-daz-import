@@ -88,3 +88,10 @@ class CyclesStatic:
                 tree.nodes.remove(node)
 
         return marked
+
+    @classmethod
+    def create_cycles_tree(cls, mat):
+        tree = cls(None)
+        tree.nodes = mat.node_tree.nodes
+        tree.links = mat.node_tree.links
+        return tree

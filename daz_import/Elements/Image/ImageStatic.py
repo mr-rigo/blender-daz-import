@@ -15,9 +15,9 @@ class ImageStatic:
             return cls.load(url)
 
     @classmethod
-    def load(cls, url: str) -> bpy.types.Image:                
+    def load(cls, url: str) -> bpy.types.Image:
         filepath = Collection.path(url)
-        if filepath is None:
+        if not filepath:
             # ErrorsStatic.report('Image not found:  \n"%s"' %
             #                     filepath, trigger=(3, 4))
             print('Image not found:  \n{filepath}')
@@ -26,7 +26,6 @@ class ImageStatic:
         img = bpy.data.images.load(filepath)
         img.name = os.path.splitext(os.path.basename(filepath))[0]
         cls._images[url] = img
-        # Settings.images[url] = img
         return img
 
     @staticmethod

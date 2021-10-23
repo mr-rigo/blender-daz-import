@@ -1,4 +1,6 @@
+from bpy.types import Image
 from daz_import.Elements.Color import ColorStatic
+
 
 
 class Map:
@@ -39,18 +41,16 @@ class Map:
     def __repr__(self):
         return ("<Map %s %s %s (%s %s)>" % (self.image, self.ismask, self.size, self.xoffset, self.yoffset))
 
-    def getTexture(self):
-        from .Texture import Texture
+    def build(self) -> Image:
+        from daz_import.Elements.Image.ImageStatic import ImageStatic
 
-        return Texture.create(self)
-
-    def build(self):
         if self.image:
             return self.image
         elif self.url:
-            from daz_import.Elements.Image.ImageStatic import ImageStatic
-
             self.image = ImageStatic.get_by_url(self.url)
             return self.image
         else:
             return self
+
+    def get_image(self) -> Image:        
+        return self.build()
