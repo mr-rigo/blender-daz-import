@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import bpy
+from bpy.types import Material as BlenderMat
 from typing import List, Dict
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from daz_import.Elements.Assets.Channels import Channels
 from daz_import.Lib.Settings import Settings
 from mathutils import Vector
@@ -16,15 +17,16 @@ from daz_import.Elements.Color import ColorStatic
 
 
 class Material(Asset):
-    loaded: Dict[str, Material] = {}
+    loaded: Dict[str, BlenderMat] = {}
 
-    def __init__(self, fileref):
+    def __init__(self, fileref: str):
+        from daz_import.geometry import GeoNode, Uvset
+
         super().__init__(fileref)
         self.channelsData: Channels = Channels(self)
 
         self.scene = None
         self.shader = 'UBER_IRAY'
-        # self.shader = '3DELIGHT'
         self.channelsData.channels = OrderedDict()
         self.textures = OrderedDict()
 
@@ -33,11 +35,13 @@ class Material(Asset):
         self.force = False
         self.shells = {}
 
-        self.geometry: Asset = None
+        self.geometry: GeoNode = None
         self.geoemit = []
         self.geobump = {}
-        self.uv_set = None
-        self.uv_sets = {}
+
+        self.uv_set: Uvset = None
+        self.uv_sets: Dict[str, Uvset] = {}
+
         self.useDefaultUvs = True
         self.udim = 0
         self.basemix = 0
@@ -77,11 +81,12 @@ class Material(Asset):
                    "  %s\n" % geonode.materials[key] +
                    "  %s" % self)
             ErrorsStatic.report(msg, trigger=(2, 3))
-        geonode.materials[key] = self        
+        geonode.materials[key] = self
         self.geometry = geonode
 
     def update(self, struct: Dict):
         super().update(struct)
+
         self.channelsData.update(struct)
 
         geo = geonode = None
@@ -117,9 +122,10 @@ class Material(Asset):
         if self.basemix == 2:
             self.basemix = 0
         elif self.basemix not in [0, 1]:
-            raise DazError("Unknown Base Mixing: %s             " %
-                           self.material.basemix)
+            raise DazError(
+                f"Unknown Base Mixing: {self.material.basemix}             ")
 
+        # self.enabled = self.get_enabled("")
         self.enabled = self.get_enabled(self.shader)
 
         self.thinWall = self.channelsData.getValue(["Thin Walled"], False)
@@ -571,4 +577,7 @@ class Material(Asset):
                 "Velvet": True,
             }
         else:
-            raise DazError(f"Bug: Unknown shader {self.shader}")
+            data = defaultdict()
+            data.default_factory = lambda: False
+            print('-- Undefined shader', shader)
+            return data

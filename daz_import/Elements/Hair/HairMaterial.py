@@ -1,5 +1,6 @@
 from daz_import.Elements.Material import Material
 from daz_import.Elements.Material.Cycles import CyclesMaterial
+from .Hair import getHairTree
 
 
 class HairMaterial(CyclesMaterial):

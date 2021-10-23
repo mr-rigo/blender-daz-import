@@ -14,6 +14,7 @@ from daz_import.Elements.Morph import Selector
 from daz_import.Lib import Registrar
 from daz_import.Elements.Material.MaterialGroup import MaterialGroup
 from .Hair import *
+from .HairStatic import HairStatic
 from .HairMaterial import HairMaterial
 
 

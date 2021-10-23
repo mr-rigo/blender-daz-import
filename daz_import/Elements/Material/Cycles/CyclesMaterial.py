@@ -50,9 +50,9 @@ class CyclesMaterial(Material):
 
     def setupTree(self):
         from daz_import.Elements.Material.PbrTree import PbrTree
-
-        if self.isHair:
-            from daz_import.Elements.Hair import getHairTree
+        from daz_import.Elements.Hair import getHairTree
+        
+        if self.isHair:            
             geo = self.geometry
             if geo and geo.isStrandHair:
                 geo.hairMaterials.append(self)

@@ -107,6 +107,7 @@ class ImportClass:
     def __import_file(filepath: str, context) -> None:
         Settings.scene_ = filepath
         t1 = perf_counter()
+
         Progress.start("\nLoading %s" % filepath)
 
         if Settings.fitFile_:
@@ -127,6 +128,7 @@ class ImportClass:
             raise DazError(msg)
 
         Progress.show(20, 100)
+
         print("Preprocessing...")
 
         for asset, inst in file_asset.nodes:
@@ -182,8 +184,8 @@ class ImportClass:
 
         print("Postprocessing...")
 
-        for asset, inst in file_asset.modifiers:
-            asset.postbuild(context, inst)
+        for asset, inst in file_asset.modifiers:            
+            asset.postbuild(context, inst)            
 
         for _, inst in file_asset.nodes:
             inst.buildInstance(context)

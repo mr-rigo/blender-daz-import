@@ -298,11 +298,11 @@ class GeoNode(Node):
                 Settings.hdUvMissing_.append(hdob.name)
         matnames = dict([(pg.name, pg.text)
                          for pg in hdob.data.DazHDMaterials])
-        
-        for mname in self.highdef.matgroups:            
+
+        for mname in self.highdef.matgroups:
             mname = matnames.get(mname, mname)
-            
-            mat = None            
+
+            mat = None
             if mat := Material.loaded.get(mname):
                 ...
             else:
@@ -624,18 +624,24 @@ class Geometry(Asset):
     def getHiddenMaterial(self):
         if Settings.hiddenMaterial_:
             return Settings.hiddenMaterial_
+
         mat = Settings.hiddenMaterial_ = bpy.data.materials.new("HIDDEN")
         mat.diffuse_color[3] = 0
         mat.use_nodes = True
         mat.blend_method = 'CLIP'
         mat.shadow_method = 'NONE'
+
         tree = mat.node_tree
         tree.nodes.clear()
+
         node = tree.nodes.new(type="ShaderNodeBsdfTransparent")
         node.location = (0, 0)
+
         output = tree.nodes.new(type="ShaderNodeOutputMaterial")
         output.location = (200, 0)
+
         tree.links.new(node.outputs["BSDF"], output.inputs["Surface"])
+        
         return mat
 
     def preprocess(self, context, inst):

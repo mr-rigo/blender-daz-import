@@ -228,6 +228,7 @@ class SettingsClass(JsonObject):
     def forAnimation(self, btn, ob):
         self.clear()
         self.reset()
+
         self.scale_ = ob.DazScale
         self.useNodes_ = True
         self.useAnimations_ = True
@@ -239,6 +240,7 @@ class SettingsClass(JsonObject):
     def forMorphLoad(self, ob):
         self.clear()
         self.reset()
+        
         self.scale_ = ob.DazScale
         self.useMorph_ = True
         self.useMorphOnly_ = True

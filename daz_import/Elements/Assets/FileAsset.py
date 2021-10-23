@@ -1,33 +1,41 @@
 from __future__ import annotations
-from typing import List
+import pdb
 from mathutils import Vector, Matrix
-from typing import Dict, Any
-from daz_import.Lib.Settings import Settings, Settings, Settings
+from typing import Dict, Any, List, Tuple
+from daz_import.Lib.Settings import Settings
 from .Asset import Asset
 from .Assets import Assets
 from .Accessor import Accessor
+
 from daz_import.Lib.Files.Json import Json
 from daz_import.Collection import Collection, DazPath
+
+from copy import deepcopy
 
 
 class FileAsset(Asset):
 
-    def __init__(self, fileref, toplevel):
+    def __init__(self, fileref, toplevel: bool):
+        from daz_import.Elements.Modifier import Morph
+        from daz_import.geometry import Uvset
+        from daz_import.Elements.Node import Node, Instance
+        from daz_import.Elements.Material import Material
+
         super().__init__(fileref)
 
-        self.nodes: List[Asset] = []
-        self.modifiers: List[Asset] = []
-        self.uvs: List[Asset] = []
-        self.materials: List[Asset] = []
+        self.nodes: List[Tuple[Node, Instance]] = []
+        self.modifiers: List[Tuple[Morph, Instance]] = []
+        self.uvs: List[Uvset] = []
+        self.materials: List[Material] = []
         self.animations: List[Asset] = []
-        self.instances = {}
-        self.extras = []
-        self.sources: List[Asset] = []
+        self.instances: Dict[str, Node] = {}
         self.toplevel = toplevel
+
+        self.caller = None
+        self.camera = None
 
         if toplevel:
             self.caller = self
-            self.camera = None
 
     def __repr__(self):
         return ("<File %s>" % self.id)
@@ -74,27 +82,23 @@ class FileAsset(Asset):
         for nstruct in scene.get("nodes", []):
             asset = self.get_children(data=nstruct)
 
-            if asset and asset.is_instense('Geometry'):
-                msg = f"Bug: expected node not geometry {asset}"
-                print(msg)
-                # ErrorsStatic.report(msg, trigger=(2, 3))
-            elif asset:
-                inst = asset.makeInstance(self.fileref,
-                                          nstruct)
-                self.instances[inst.id] = inst
-                self.nodes.append((asset, inst))
+            if not asset or asset.is_instense('Geometry'):
+                print(f"Bug: expected node not geometry {asset}")
+                continue
+
+            inst = asset.makeInstance(self.fileref, nstruct)
+            self.instances[inst.id] = inst
+            self.nodes.append((asset, inst))
 
         if Settings.useMaterials_:
             for mstruct in scene.get("materials", []):
-                from copy import deepcopy
-
                 asset = self.create_by_key('CyclesMaterial', self.fileref)
-
                 asset.parse(mstruct)
 
                 if url := mstruct.get('url'):
                     if base := self.get_children(url=url):
-                        asset.channelsData.channels = deepcopy(base.channelsData.channels)
+                        asset.channelsData.channels = deepcopy(
+                            base.channelsData.channels)
 
                 asset.update(mstruct)
                 self.materials.append(asset)
@@ -124,14 +128,14 @@ class FileAsset(Asset):
 
         return self
 
-    def makeLocalNode(self, struct):
-        if "preview" not in struct.keys():
+    def makeLocalNode(self, struct: dict):
+        preview = struct.get("preview")
+
+        if not preview:
             return
 
-        preview = struct["preview"]
-        classes = {"figure": 'Figure', "bone": 'Bone'}
-
         key = 'Node'
+        classes = {"figure": 'Figure', "bone": 'Bone'}
 
         for type_key, class_key in classes.items():
             if preview["type"] != type_key:
@@ -161,15 +165,17 @@ class FileAsset(Asset):
         if url := struct.get('struct'):
             Assets.push(asset, url)
 
-        if "geometries" in struct.keys():
-            geos = struct["geometries"]
-
+        if geos := struct.get("geometries"):
+            geos: Dict
+            
             for n, geonode in enumerate(asset.geometries):
                 Assets.push(geonode, geonode.id)
                 inst = geonode.makeInstance(self.fileref, geos[n])
                 self.instances[inst.id] = inst
                 self.nodes.append((geonode, inst))
+
                 geo = geonode.data
+
                 if not geo:
                     continue
 

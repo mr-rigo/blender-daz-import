@@ -1,12 +1,14 @@
+from typing import Dict
 import bpy
 import math
 import os
+from typing import Dict
 from mathutils import Euler, Vector
 from bpy.props import BoolProperty, FloatProperty, EnumProperty, StringProperty
 
 from daz_import.driver import DriverUser
 from daz_import.Lib import Registrar
-from daz_import.Lib.Settings import Settings, Settings, Settings
+from daz_import.Lib.Settings import Settings
 from daz_import.Lib.BlenderStatic import BlenderStatic
 from daz_import.Lib.VectorStatic import VectorStatic
 from daz_import.Lib.Utility import UtilityStatic, \
@@ -22,9 +24,10 @@ from daz_import.Elements.Bone import BoneInstance
 
 class FigureInstance(Instance):
 
-    def __init__(self, fileref, node, struct):
+    def __init__(self, fileref, node, struct: Dict):        
         for geo in node.geometries:
             geo.figureInst = self
+
         Instance.__init__(self, fileref, node, struct)
         self.figure = self
         

@@ -13,8 +13,9 @@ from daz_import.Elements.Material.Material import Material
 
 
 class CyclesTree(CyclesStatic):
-    def __init__(self, cmat: Material):
-        self.material: Material = cmat
+    
+    def __init__(self, material: Material):
+        self.material: Material = material
 
         self.type: str = 'CYCLES'
 
@@ -50,8 +51,8 @@ class CyclesTree(CyclesStatic):
     def getValue(self, channel, default):
         return self.material.channelsData.getValue(channel, default)
 
-    def isEnabled(self, channel):
-        return self.material.enabled[channel]
+    def isEnabled(self, key):
+        return self.material.enabled.get(key)
 
     def getColor(self, channel, default):
         return self.material.getColor(channel, default)
@@ -228,6 +229,9 @@ class CyclesTree(CyclesStatic):
 
     def makeTree(self, slot="UV"):
         mat = self.material.rna
+        if not mat:
+            return
+
         mat.use_nodes = True
         mat.node_tree.nodes.clear()
         self.nodes = mat.node_tree.nodes
