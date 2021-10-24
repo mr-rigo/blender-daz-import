@@ -8,8 +8,8 @@ import bpy
 from bpy.types import Material as BlenderMaterial
 from bpy.types import ShaderNode, NodeLink, \
     ShaderNodeTexImage, ShaderNodeBump, NodeSocketVector,\
-    ShaderNodeGroup, ShaderNodeTexImage, ShaderNodeMapping,\
-    ShaderNodeBsdfDiffuse, ShaderNodeOutputMaterial
+    ShaderNodeGroup, ShaderNodeTexImage, ShaderNodeMapping
+
 
 from daz_import.Elements.Color import ColorStatic
 from daz_import.Lib.Errors import DazError
@@ -18,13 +18,14 @@ from daz_import.Lib.Utility import UtilityStatic
 from daz_import.Lib.Settings import Settings
 from daz_import.Elements.Material.Cycles.CyclesStatic import CyclesStatic
 from daz_import.Elements.Material.Material import Material
+from daz_import.Elements.ShaderGraph import ShaderGraph, BSDFPrincipled
 
 
 class CyclesTree(CyclesStatic):
 
     def __init__(self, material: Material):
         self.material: Material = material
-        self.easy = False
+        self.easy_shader = False
 
         self.type: str = 'CYCLES'
 
@@ -185,7 +186,7 @@ class CyclesTree(CyclesStatic):
 
     def build(self):
         self.makeTree()
-        if self.easy:
+        if self.easy_shader:
             self.easy_build()
             return
 
@@ -196,25 +197,22 @@ class CyclesTree(CyclesStatic):
         self.buildShells()
         self.buildOutput()
 
-    def easy_build(self):
-        mat = self.material.rna
-        mat.use_nodes = True
-        bsdf: ShaderNodeBsdfDiffuse = mat.node_tree.nodes.new(
-            'ShaderNodeBsdfPrincipled')
+    def easy_build(self):        
+        graph = ShaderGraph(self.material.rna)        
+        
+        shader = BSDFPrincipled(graph)
+        shader.diffuse.default((1, 1, 1, 1))
+        shader.specular.default(0.2)
 
-        out: ShaderNodeOutputMaterial = mat.node_tree.nodes.new(
-            'ShaderNodeOutputMaterial')
+        graph.output.surface += shader.output
 
-        bsdf.inputs['Base Color'].default_value = (1, 1, 1, 1)
-        bsdf.inputs['Specular'].default_value = 0.2
-        self.links.new(out.inputs['Surface'], bsdf.outputs['BSDF'])
         color, diffuse = self.getDiffuseColor()
-
         if diffuse:
-            self.links.new(bsdf.inputs['Base Color'], diffuse.outputs['Color'])
+            shader.diffuse += diffuse.outputs['Color']
 
-        # import pdb
-        # pdb.set_trace()
+        # getGlossyColor
+        # getTranslucentColor
+        # getRefractionColor
 
     def buildShells(self):
         shells = []
@@ -283,13 +281,13 @@ class CyclesTree(CyclesStatic):
         mat.node_tree.nodes.clear()
         self.nodes = mat.node_tree.nodes
         self.links = mat.node_tree.links
-        if self.easy:
+        if self.easy_shader:
             return
 
         return self.addTexco(slot)
 
     def addTexco(self, slot):
-        if self.easy:
+        if self.easy_shader:
             return
 
         if self.material.useDefaultUvs:

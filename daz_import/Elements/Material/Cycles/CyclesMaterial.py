@@ -51,7 +51,6 @@ class CyclesMaterial(Material):
 
         self.tree = self.setupTree(color)
         self.tree.build()
-        
 
     def setupTree(self, color=None) -> CyclesTree:
         from daz_import.Elements.Material.PbrTree import PbrTree
@@ -149,16 +148,20 @@ class CyclesMaterial(Material):
     def setTransSettings(self, useRefraction, useBlend, color, alpha):
         Settings.usedFeatures_["Transparent"] = True
         mat = self.rna
+
         if useBlend:
             mat.blend_method = 'BLEND'
             mat.show_transparent_back = False
         else:
             mat.blend_method = 'HASHED'
+
         mat.use_screen_refraction = useRefraction
+
         if hasattr(mat, "transparent_shadow_method"):
             mat.transparent_shadow_method = 'HASHED'
         else:
             mat.shadow_method = 'HASHED'
+
         if not self.isShellMat:
             mat.diffuse_color[0:3] = color
             mat.diffuse_color[3] = alpha
