@@ -122,8 +122,8 @@ class DispGroup(ShaderGroup):
 
     def __init__(self):
         ShaderGroup.__init__(self)
-        self.mat_group.insockets += ["Scale", "Midlevel", "UV"]
-        self.mat_group.outsockets += ["Displacement"]
+        self.in_sockets("Scale", "Midlevel", "UV")
+        self.out_sockets("Displacement")
 
     def create(self, node, name, parent):
         ShaderGroup.create(self, node, name, parent, 4)
@@ -270,8 +270,8 @@ class MixNormalTextureGroup(ShaderGroup):
 
     def __init__(self):
         ShaderGroup.__init__(self)
-        self.mat_group.insockets += ["Fac", "Color1", "Color2"]
-        self.mat_group.outsockets += ["Color"]
+        self.in_sockets("Fac", "Color1", "Color2")
+        self.out_sockets("Color")
 
     def create(self, node, name, parent):
         ShaderGroup.create(self, node, name, parent, 8)

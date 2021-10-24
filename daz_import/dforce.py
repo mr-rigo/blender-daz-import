@@ -29,7 +29,6 @@ class DForce:
 
     def build(self, _):
         print("Build", self)
-        pass
 
 # -------------------------------------------------------------
 #  studio/modifier/dynamic_generate_hair
@@ -52,6 +51,7 @@ class DynSim(DForce):
             return
         from daz_import.Elements.Node import Instance
         from daz_import.geometry import GeoNode
+
         if isinstance(self.instance, Instance):
             geonode = self.instance.geometries[0]
         elif isinstance(self.instance, GeoNode):
@@ -60,6 +60,7 @@ class DynSim(DForce):
             ErrorsStatic.report("Bug DynSim %s" %
                                 self.instance, trigger=(2, 3))
             return
+        
         ob = geonode.rna
         if ob and ob.type == 'MESH':
             ob.DazCloth = True
@@ -92,8 +93,9 @@ class DynSim(DForce):
         geo = geonode.data
         mnums = dict([(mgrp, mn)
                       for mn, mgrp in enumerate(geo.polygon_material_groups)])
-        for simset in geonode.simsets:            
-            strength = simset.modifier.channelsData.getValue(["Dynamics Strength"], 0.0)
+        for simset in geonode.simsets:
+            strength = simset.modifier.channelsData.getValue(
+                ["Dynamics Strength"], 0.0)
             if strength == 1.0 and not useInflu:
                 continue
             for mgrp in simset.modifier.groups:
@@ -237,7 +239,7 @@ class Cloth:
 
 @Registrar()
 class DAZ_OT_MakeCloth(DazPropsOperator, Cloth, Collision):
-    
+
     bl_idname = "daz.make_cloth"
     bl_label = "Make Cloth"
     bl_description = "Add cloth modifiers to selected meshes"

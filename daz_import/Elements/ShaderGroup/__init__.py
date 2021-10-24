@@ -23,6 +23,12 @@ class ShaderGroup(CyclesShader):
     def __repr__(self):
         return ("<NodeGroup %s>" % self.group)
 
+    def in_sockets(self, *sockets: str):
+        self.mat_group.insockets += sockets
+
+    def out_sockets(self, *sockets: str):
+        self.mat_group.outsockets += sockets
+
 # ---------------------------------------------------------------------
 #   Shell Group
 # ---------------------------------------------------------------------
@@ -33,10 +39,10 @@ class ShellGroup:
     def __init__(self, push):
         self.group = None
         self.push = push
-        self.mat_group = MaterialGroup(self)
-        self.mat_group.insockets += ["Influence", "Cycles",
-                                     "Eevee", "UV", "Displacement"]
-        self.mat_group.outsockets += ["Cycles", "Eevee", "Displacement"]
+
+        self.mat_group = MaterialGroup(self)        
+        self.in_sockets("Influence", "Cycles", "Eevee", "UV", "Displacement")
+        self.out_sockets("Cycles", "Eevee", "Displacement")
 
     def create(self, node, name, parent):
         self.mat_group.create(node, name, parent, 10)
@@ -49,6 +55,12 @@ class ShellGroup:
         self.group.outputs.new("NodeSocketShader", "Cycles")
         self.group.outputs.new("NodeSocketShader", "Eevee")
         self.group.outputs.new("NodeSocketFloat", "Displacement")
+
+    def in_sockets(self, *sockets: str):
+        self.mat_group.insockets += sockets
+
+    def out_sockets(self, *sockets: str):
+        self.mat_group.outsockets += sockets
 
     def addNodes(self, args):
         shmat, uvname = args
@@ -160,8 +172,8 @@ class FresnelShaderGroup(ShaderGroup):
 
     def __init__(self):
         super().__init__()
-        self.mat_group.insockets += ["IOR", "Roughness", "Normal"]
-        self.mat_group.outsockets += ["Fac"]
+        self.in_sockets("IOR", "Roughness", "Normal")
+        self.out_sockets("Fac")
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 4)
@@ -223,8 +235,8 @@ class PBRSkinFresnelShaderGroup(FresnelShaderGroup):
 class MixShaderGroup(ShaderGroup):
     def __init__(self):
         super().__init__()
-        self.mat_group.insockets += ["Fac", "Cycles", "Eevee"]
-        self.mat_group.outsockets += ["Cycles", "Eevee"]
+        self.in_sockets("Fac", "Cycles", "Eevee")
+        self.out_sockets("Cycles", "Eevee")
 
     def create(self, node, name, parent, ncols):
         super().create(node, name, parent, ncols)
@@ -259,8 +271,8 @@ class AddShaderGroup(ShaderGroup):
         self.add1 = None
         self.add2 = None
         super().__init__()
-        self.mat_group.insockets += ["Cycles", "Eevee"]
-        self.mat_group.outsockets += ["Cycles", "Eevee"]
+        self.in_sockets("Cycles", "Eevee")
+        self.out_sockets("Cycles", "Eevee")
 
     def create(self, node, name, parent, ncols):
         super().create(node, name, parent, ncols)
@@ -287,7 +299,7 @@ class EmissionShaderGroup(AddShaderGroup):
 
     def __init__(self):
         super().__init__()
-        self.mat_group.insockets += ["Color", "Strength"]
+        self.in_sockets("Color", "Strength")
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 3)
@@ -307,8 +319,8 @@ class EmissionShaderGroup(AddShaderGroup):
 class OneSidedShaderGroup(ShaderGroup):
     def __init__(self):
         super().__init__()
-        self.mat_group.insockets += ["Cycles", "Eevee"]
-        self.mat_group.outsockets += ["Cycles", "Eevee"]
+        self.in_sockets("Cycles", "Eevee")
+        self.out_sockets("Cycles", "Eevee")
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 3)
@@ -340,7 +352,7 @@ class DiffuseShaderGroup(MixShaderGroup):
 
     def __init__(self):
         super().__init__()
-        self.mat_group.insockets += ["Color", "Roughness", "Normal"]
+        self.in_sockets("Color", "Roughness", "Normal")
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 3)
@@ -369,7 +381,7 @@ class GlossyShaderGroup(MixShaderGroup):
 
     def __init__(self):
         super().__init__()
-        self.mat_group.insockets += ["Color", "Roughness", "Normal"]
+        self.in_sockets("Color", "Roughness", "Normal")
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 3)
@@ -552,7 +564,7 @@ class TransparentShaderGroup(MixShaderGroup):
 
     def __init__(self):
         super().__init__()
-        self.mat_group.insockets += ["Color"]
+        self.in_sockets("Color")
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 3)
@@ -633,7 +645,7 @@ class MakeupShaderGroup(MixShaderGroup):
 
     def __init__(self):
         super().__init__()
-        self.mat_group.insockets += ["Color", "Roughness", "Normal"]
+        self.in_sockets("Color", "Roughness", "Normal")
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 3)
@@ -662,8 +674,8 @@ class RayClipShaderGroup(ShaderGroup):
 
     def __init__(self):
         super().__init__()
-        self.mat_group.insockets += ["Shader", "Color"]
-        self.mat_group.outsockets += ["Shader"]
+        self.in_sockets("Shader", "Color")
+        self.out_sockets("Shader")
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 4)
@@ -701,7 +713,7 @@ class DualLobeShaderGroup(ShaderGroup):
         self.mat_group.insockets += [
             "Fac", "Cycles", "Eevee", "Weight", "IOR",
             "Roughness 1", "Roughness 2"]
-        self.mat_group.outsockets += ["Cycles", "Eevee"]
+        self.out_sockets("Cycles", "Eevee")
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 4)
@@ -793,7 +805,7 @@ class VolumeShaderGroup(ShaderGroup):
         self.mat_group.insockets += [
             "Absorbtion Color", "Absorbtion Density", "Scatter Color",
             "Scatter Density", "Scatter Anisotropy"]
-        self.mat_group.outsockets += ["Volume"]
+        self.out_sockets("Volume")
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 3)
@@ -835,8 +847,8 @@ class NormalShaderGroup(ShaderGroup):
 
     def __init__(self):
         super().__init__()
-        self.mat_group.insockets += ["Strength", "Color"]
-        self.mat_group.outsockets += ["Normal"]
+        self.in_sockets("Strength", "Color")
+        self.out_sockets("Normal")
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 8)
@@ -963,7 +975,7 @@ class DetailShaderGroup(ShaderGroup):
         super().__init__()
         self.mat_group.insockets += ["Texture",
                                      "Strength", "Max", "Min", "Normal"]
-        self.mat_group.outsockets += ["Displacement"]
+        self.out_sockets("Displacement")
 
 
 # ---------------------------------------------------------------------
@@ -976,7 +988,7 @@ class DisplacementShaderGroup(ShaderGroup):
         super().__init__()
         self.mat_group.insockets += ["Texture",
                                      "Strength", "Max", "Min", "Normal"]
-        self.mat_group.outsockets += ["Displacement"]
+        self.out_sockets("Displacement")
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 4)
@@ -1023,8 +1035,8 @@ class DecalShaderGroup(ShaderGroup):
 
     def __init__(self):
         super().__init__()
-        self.mat_group.insockets += ["Color", "Influence"]
-        self.mat_group.outsockets += ["Color", "Alpha", "Combined"]
+        self.in_sockets("Color", "Influence")
+        self.out_sockets("Color", "Alpha", "Combined")
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 5)
@@ -1075,8 +1087,8 @@ class LieShaderGroup(ShaderGroup):
 
     def __init__(self):
         super().__init__()
-        self.mat_group.insockets += ["Vector", "Alpha"]
-        self.mat_group.outsockets += ["Color"]
+        self.in_sockets("Vector", "Alpha")
+        self.out_sockets("Color")
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 6)
@@ -1284,6 +1296,6 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator):
                 continue
 
             group, gname, args = value
-            
+
             shader.column += 1
             _ = shader.addGroup(group, gname, args=args)
