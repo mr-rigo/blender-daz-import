@@ -56,6 +56,27 @@ class BSDFPrincipled(ShaderNodeAbstract):
         self.diffuse = ShaderProperyInput(self, 'Base Color')
         self.specular = ShaderProperyInput(self, 'Specular')
 
+class DiffuseShader(ShaderNodeAbstract):
+    alias = 'ShaderNodeBsdfDiffuse'
+
+    def __init__(self, graph):
+        super().__init__(graph)
+        self.output = ShaderProperyOutput(self, 'BSDF')
+        self.diffuse = ShaderProperyInput(self, 'Color')
+        self.roughness = ShaderProperyInput(self, 1)
+        self.normal = ShaderProperyInput(self, 'Normal')
+
+
+class EmissionShader(ShaderNodeAbstract):
+    alias = 'ShaderNodeEmission'
+
+    def __init__(self, graph):
+        super().__init__(graph)
+        self.input = ShaderProperyInput(self, 'Color')
+        self.emisssion = ShaderProperyInput(self, 'Color')
+        self.output = ShaderProperyOutput(self, 'Emission')
+        self.power = ShaderProperyInput(self, 1)
+
 
 class ShaderGraph:
     def __init__(self, material: Material):

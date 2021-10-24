@@ -18,7 +18,7 @@ from daz_import.Lib.Utility import UtilityStatic
 from daz_import.Lib.Settings import Settings
 from daz_import.Elements.Material.Cycles.CyclesStatic import CyclesStatic
 from daz_import.Elements.Material.Material import Material
-from daz_import.Elements.ShaderGraph import ShaderGraph, BSDFPrincipled
+from daz_import.Elements.ShaderGraph import ShaderGraph, EmissionShader, DiffuseShader
 
 
 class CyclesTree(CyclesStatic):
@@ -197,16 +197,17 @@ class CyclesTree(CyclesStatic):
         self.buildShells()
         self.buildOutput()
 
-    def easy_build(self):        
-        graph = ShaderGraph(self.material.rna)        
-        
-        shader = BSDFPrincipled(graph)
-        shader.diffuse.default((1, 1, 1, 1))
-        shader.specular.default(0.2)
+    def easy_build(self):
+        graph = ShaderGraph(self.material.rna)
+        shader = DiffuseShader(graph)
+
+        # shader.diffuse.default((1, 1, 1, 1))
+        # shader.specular.default(0.2)
 
         graph.output.surface += shader.output
 
-        color, diffuse = self.getDiffuseColor()
+        _, diffuse = self.getDiffuseColor()
+
         if diffuse:
             shader.diffuse += diffuse.outputs['Color']
 
@@ -363,6 +364,7 @@ class CyclesTree(CyclesStatic):
 # -------------------------------------------------------------
 #   Normal
 # -------------------------------------------------------------
+
 
     def buildNormal(self, uvname):
         if not self.isEnabled("Normal"):
@@ -595,8 +597,8 @@ class CyclesTree(CyclesStatic):
             if value < 0:
                 return 0, None
 
-        if useFactor:
-            value, tex = self.multiplySomeTex(value, tex, slot)
+        # if useFactor:
+        #     value, tex = self.multiplySomeTex(value, tex, slot)
 
         if VectorStatic.is_vector(value) and not VectorStatic.is_vector(default):
             value = (value[0] + value[1] + value[2])/3

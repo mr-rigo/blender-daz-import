@@ -1,7 +1,7 @@
 import bpy
 import math
 from mathutils import Matrix
-from daz_import.Lib.Settings import Settings, Settings
+from daz_import.Lib.Settings import Settings
 from daz_import.Elements.Material.Cycles.CyclesStatic import CyclesStatic
 from daz_import.Elements.Material.Cycles.CyclesTree import CyclesTree
 from daz_import.Elements.Material.Material import Material
@@ -11,8 +11,7 @@ from daz_import.Lib import BlenderStatic
 class CyclesMaterial(Material):
 
     def __init__(self, fileref):
-        Material.__init__(self, fileref)
-
+        Material.__init__(self, fileref)        
         self.tree: CyclesTree = None
         self.useEevee = False
 
@@ -49,10 +48,10 @@ class CyclesMaterial(Material):
             return
         super().build(context)
 
-        self.tree = self.setupTree(color)
+        self.tree = self.get_shader(color)
         self.tree.build()
 
-    def setupTree(self, color=None) -> CyclesTree:
+    def get_shader(self, color=None) -> CyclesTree:
         from daz_import.Elements.Material.PbrTree import PbrTree
         from daz_import.Elements.Hair import getHairTree
 
