@@ -201,7 +201,7 @@ class LightShader(CyclesShader):
         emit.inputs["Color"].default_value[0:3] = color
         emit.inputs["Strength"].default_value = self.material.instance.fluxFactor
         output = self.add_node("ShaderNodeOutputLight", 2)
-        self.links.new(emit.outputs[0], output.inputs["Surface"])
+        self.link(emit.outputs[0], output.inputs["Surface"])
 
     def addTexco(self, slot):
         ...

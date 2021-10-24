@@ -114,7 +114,7 @@ class CyclesShader(CyclesStatic):
             return self.eevee.outputs[0]
 
     def add_group(self, cls: Type, name, col=None,
-                 size=0, args=[], force=False):
+                  size=0, args=[], force=False):
         from daz_import.Elements.ShaderGroup import ShaderGroup
 
         if col is None:
@@ -655,12 +655,12 @@ class CyclesShader(CyclesStatic):
             return
 
         self.column += 1
-        if self.material.shader == 'PBRSKIN':
+        if self.material.shader_key == 'PBRSKIN':
             node = self.add_group(DualLobePBRSkinShaderGroup,
-                                 "DAZ Dual Lobe PBR", size=100)
+                                  "DAZ Dual Lobe PBR", size=100)
         else:
             node = self.add_group(DualLobeUberIrayShaderGroup,
-                                 "DAZ Dual Lobe Uber", size=100)
+                                  "DAZ Dual Lobe Uber", size=100)
         value, tex = self.getColorTex(
             ["Dual Lobe Specular Weight"], "NONE", 0.5, False)
         node.inputs["Weight"].default_value = value
@@ -680,7 +680,7 @@ class CyclesShader(CyclesStatic):
 
         ratio = self.getValue(["Dual Lobe Specular Ratio"], 1.0)
 
-        if self.material.shader == 'PBRSKIN':
+        if self.material.shader_key == 'PBRSKIN':
             roughness, roughtex = self.getColorTex(
                 ["Specular Lobe 1 Roughness"], "NONE", 0.0, False)
             lobe2mult = self.getValue(["Specular Lobe 2 Roughness Mult"], 1.0)
@@ -773,7 +773,7 @@ class CyclesShader(CyclesStatic):
         ior = 1.45
         iortex = None
 
-        if self.material.shader == 'UBER_IRAY':
+        if self.material.shader_key == 'UBER_IRAY':
             if self.material.basemix == 0:    # Metallic/Roughness
                 value, tex = self.getColorTex(
                     "getChannelGlossyReflectivity", "NONE", 0, False)
@@ -813,7 +813,7 @@ class CyclesShader(CyclesStatic):
             ior, iortex = self.getColorTex(["Top Coat IOR"], "NONE", 1.45)
             self.linkScalar(iortex, fresnel, ior, "IOR")
 
-        if self.material.shader == 'UBER_IRAY':
+        if self.material.shader_key == 'UBER_IRAY':
             # Top Coat Bump Mode
             #   [ "Height Map", "Normal Map" ]
             if not fresnel:
@@ -848,7 +848,7 @@ class CyclesShader(CyclesStatic):
         top = self.add_group(TopCoatShaderGroup, "DAZ Top Coat", size=100)
         self.linkColor(coltex, top, color, "Color")
         self.linkScalar(roughtex, top, roughness, "Roughness")
-        if self.material.shader == 'PBRSKIN':
+        if self.material.shader_key == 'PBRSKIN':
             if self.bumptex:
                 self.link(self.bumptex.outputs[0], top.inputs["Height"])
                 self.material.addGeoBump(self.bumptex, top.inputs["Distance"])
@@ -897,7 +897,7 @@ class CyclesShader(CyclesStatic):
         from daz_import.Elements.ShaderGroup import TranslucentShaderGroup
 
         node = self.add_group(TranslucentShaderGroup,
-                             "DAZ Translucent", size=200)
+                              "DAZ Translucent", size=200)
         node.width = 200
         self.linkColor(tex, node, color, "Color")
         node.inputs["Gamma"].default_value = 3.5
@@ -1035,13 +1035,14 @@ class CyclesShader(CyclesStatic):
             from daz_import.Elements.ShaderGroup import FakeCausticsShaderGroup
             self.column += 1
             node = self.add_group(FakeCausticsShaderGroup, "DAZ Fake Caustics", args=[
-                                 color], force=True)
+                color], force=True)
             self.mixWithActive(weight, wttex, node, keep=True)
 
     def buildRefractionNode(self):
         from daz_import.Elements.ShaderGroup import RefractionShaderGroup
         self.column += 1
-        node = self.add_group(RefractionShaderGroup, "DAZ Refraction", size=150)
+        node = self.add_group(RefractionShaderGroup,
+                              "DAZ Refraction", size=150)
         node.width = 240
 
         color, tex = self.getColorTex(
@@ -1082,7 +1083,8 @@ class CyclesShader(CyclesStatic):
                 tex = None
             else:
                 from daz_import.Elements.ShaderGroup import TransparentShaderGroup
-                node = self.add_group(TransparentShaderGroup, "DAZ Transparent")
+                node = self.add_group(
+                    TransparentShaderGroup, "DAZ Transparent")
                 self.mixWithActive(alpha, tex, node)
             node.inputs["Color"].default_value[0:3] = ColorStatic.WHITE
             if alpha < 1 or tex:
@@ -1151,7 +1153,7 @@ class CyclesShader(CyclesStatic):
         if not twosided:
             from daz_import.Elements.ShaderGroup import OneSidedShaderGroup
             node = self.add_group(OneSidedShaderGroup,
-                                 "DAZ VectorStatic.one-Sided")
+                                  "DAZ VectorStatic.one-Sided")
             self.link(self.cycles_socket(), node.inputs["Cycles"])
             self.link(self.eevee_socket(), node.inputs["Eevee"])
             self.cycles = self.eevee = node
@@ -1183,9 +1185,9 @@ class CyclesShader(CyclesStatic):
             Settings.usedFeatures_["Volume"] = True
 
     def getSSSInfo(self, _):
-        if self.material.shader == 'UBER_IRAY':
+        if self.material.shader_key == 'UBER_IRAY':
             sssmode = self.getValue(["SSS Mode"], 0)
-        elif self.material.shader == 'PBRSKIN':
+        elif self.material.shader_key == 'PBRSKIN':
             sssmode = 1
         else:
             sssmode = 0
@@ -1214,7 +1216,7 @@ class CyclesShader(CyclesStatic):
 
     def buildVolumeSubSurface(self, sssmode, ssscolor, ssstex):
         from daz_import.Elements.ShaderGroup import VolumeShaderGroup
-        if self.material.shader == 'UBER_IRAY':
+        if self.material.shader_key == 'UBER_IRAY':
             factor = 50
         else:
             factor = 25
@@ -1633,6 +1635,10 @@ class CyclesShader(CyclesStatic):
 
     def findNode(self, key):
         return super().findNode(self, key)
+
+    def set_material(self, mat: BlenderMaterial):
+        self.nodes = mat.node_tree.nodes
+        self.links = mat.node_tree.links
 
 # -------------------------------------------------------------
 #   Utilities

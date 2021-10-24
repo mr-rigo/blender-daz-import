@@ -643,7 +643,7 @@ class Geometry(Asset):
         output = tree.nodes.new(type="ShaderNodeOutputMaterial")
         output.location = (200, 0)
 
-        tree.links.new(node.outputs["BSDF"], output.inputs["Surface"])
+        tree.link(node.outputs["BSDF"], output.inputs["Surface"])
         
         return mat
 

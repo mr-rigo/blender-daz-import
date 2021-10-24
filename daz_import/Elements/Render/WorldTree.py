@@ -25,16 +25,16 @@ class WorldShader(CyclesShader):
         if envnode and bgnode:
             self.column += 1
             mix = self.add_node("ShaderNodeMixShader")
-            self.links.new(bgnode.outputs["Fac"], mix.inputs[0])
-            self.links.new(envnode.outputs["Background"], mix.inputs[1])
-            self.links.new(bgnode.outputs["Color"], mix.inputs[2])
+            self.link(bgnode.outputs["Fac"], mix.inputs[0])
+            self.link(envnode.outputs["Background"], mix.inputs[1])
+            self.link(bgnode.outputs["Color"], mix.inputs[2])
             socket = mix.outputs[0]
 
         self.column += 1
         output = self.add_node("ShaderNodeOutputWorld")
 
         if socket:
-            self.links.new(socket, output.inputs["Surface"])
+            self.link(socket, output.inputs["Surface"])
 
         self.pruneNodeTree(self)
 
@@ -65,7 +65,7 @@ class WorldShader(CyclesShader):
             if img:
                 tex.image = img
                 tex.name = img.name
-            self.links.new(texco, tex.inputs["Vector"])
+            self.link(texco, tex.inputs["Vector"])
         strength = self.getValue(["Environment Intensity"], 1) * value
 
         envnode = self.add_node("ShaderNodeBackground")
@@ -118,7 +118,7 @@ class WorldShader(CyclesShader):
         else:
             mapping.inputs['Rotation'].default_value = rot
             mapping.inputs['Scale'].default_value = scale
-        self.links.new(texco, mapping.inputs["Vector"])
+        self.link(texco, mapping.inputs["Vector"])
         return mapping.outputs["Vector"]
 
     def getImage(self, channel, colorSpace):

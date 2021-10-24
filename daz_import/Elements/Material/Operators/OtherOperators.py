@@ -326,16 +326,16 @@ class DAZ_OT_LaunchEditor(DazPropsOperator, MaterialSelector, ChannelSetter, Lau
             mix.blend_type = 'MULTIPLY'
             mix.inputs[0].default_value = 1.0
             mix.inputs[1].default_value = item.color
-            tree.links.new(fromsocket, mix.inputs[2])
-            tree.links.new(mix.outputs[0], tosocket)
+            tree.link(fromsocket, mix.inputs[2])
+            tree.link(mix.outputs[0], tosocket)
             return mix
         elif item.ncomps == 1 and item.number != 1.0:
             mult = tree.nodes.new(type="ShaderNodeMath")
             mult.location = (x-XSIZE+50, y-YSIZE-50)
             mult.operation = 'MULTIPLY'
             mult.inputs[0].default_value = item.number
-            tree.links.new(fromsocket, mult.inputs[1])
-            tree.links.new(mult.outputs[0], tosocket)
+            tree.link(fromsocket, mult.inputs[1])
+            tree.link(mult.outputs[0], tosocket)
             return mult
 
 
@@ -421,10 +421,10 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, LaunchEditor, IsMesh)
                                      empty, img], force=True)
                 node.inputs["Influence"].default_value = 1.0
                 if fromSocket:
-                    tree.links.new(fromSocket, node.inputs["Color"])
-                    tree.links.new(node.outputs["Combined"], toSocket)
+                    tree.link(fromSocket, node.inputs["Color"])
+                    tree.link(node.outputs["Combined"], toSocket)
                 else:
-                    tree.links.new(node.outputs["Color"], toSocket)
+                    tree.link(node.outputs["Color"], toSocket)
 
     @staticmethod
     def getFromToSockets(shader, nodeType, slot):
@@ -546,7 +546,7 @@ class ShellRemover:
                 linkTo[link.from_socket.name] = link.to_socket
         for key in linkFrom.keys():
             if key in linkTo.keys():
-                tree.links.new(linkFrom[key], linkTo[key])
+                tree.link(linkFrom[key], linkTo[key])
         tree.nodes.remove(shell)
 
 

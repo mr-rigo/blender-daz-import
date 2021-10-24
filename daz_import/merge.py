@@ -287,7 +287,7 @@ class DAZ_OT_MergeGeografts(DazPropsOperator, MaterialMerger, DriverUser):
                 uvmap.location = texco.location
                 for link in mat.node_tree.links:
                     if link.from_node == texco:
-                        mat.node_tree.links.new(
+                        mat.node_tree.link(
                             uvmap.outputs["UV"], link.to_socket)
                 mat.node_tree.nodes.remove(texco)
 
@@ -384,7 +384,7 @@ def replaceNodeNames(mat, oldname, newname):
             if link.from_node in uvmaps:
                 tosockets.append(link.to_socket)
         for tosocket in tosockets:
-            mat.node_tree.links.new(fromsocket, tosocket)
+            mat.node_tree.link(fromsocket, tosocket)
 
 # -------------------------------------------------------------
 #   Create graft and mask vertex groups
@@ -501,7 +501,7 @@ def mergeUvLayers(me, keepIdx, mergeIdx):
                         texco = mat.node_tree.nodes.new(
                             type="ShaderNodeTexCoord")
                         texco.location = node.location
-                    mat.node_tree.links.new(
+                    mat.node_tree.link(
                         texco.outputs["UV"], link.to_socket)
             for node in deletes.values():
                 mat.node_tree.nodes.remove(node)

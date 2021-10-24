@@ -26,7 +26,7 @@ class Material(Asset):
         self.channelsData: Channels = Channels(self)
 
         self.scene = None
-        self.shader = 'UBER_IRAY'
+        self.shader_key = 'UBER_IRAY'
         self.channelsData.channels = OrderedDict()
         self.textures = OrderedDict()
 
@@ -129,7 +129,7 @@ class Material(Asset):
                 f"Unknown Base Mixing: {self.material.basemix}             ")
 
         # self.enabled = self.get_enabled("")
-        self.enabled = self.get_enabled(self.shader)
+        self.enabled = self.get_enabled(self.shader_key)
 
         self.thinWall = self.channelsData.getValue(["Thin Walled"], False)
         self.refractive = (self.channelsData.getValue("getChannelRefractionWeight", 0) > 0.01 or
@@ -149,14 +149,14 @@ class Material(Asset):
         type_ = data.get("type")
 
         if type_ == "studio/material/uber_iray":
-            self.shader = 'UBER_IRAY'
+            self.shader_key = 'UBER_IRAY'
         elif type_ == "studio/material/daz_brick":
             if self.url.split("#")[-1] == "PBRSkin":
-                self.shader = 'PBRSKIN'
+                self.shader_key = 'PBRSKIN'
             else:
-                self.shader = '3DELIGHT'
+                self.shader_key = '3DELIGHT'
         elif type_ == "studio/material/daz_shader":
-            self.shader = 'DAZ_SHADER'
+            self.shader_key = 'DAZ_SHADER'
 
     def build(self, context):
         if self.dontBuild():
@@ -170,7 +170,7 @@ class Material(Asset):
 
         scn = self.scene = context.scene
         mat.DazRenderEngine = scn.render.engine
-        mat.DazShader = self.shader
+        mat.DazShader = self.shader_key
 
         if self.uv_set:
             self.uv_sets[self.uv_set.name] = self.uv_set
@@ -186,7 +186,7 @@ class Material(Asset):
                 self.uv_sets[uv] = self.uv_sets[uvset.name] = uvset
 
         for shell in self.shells.values():
-            shell.material.shader = self.shader
+            shell.material.shader_key = self.shader_key
 
     def dontBuild(self) -> bool:
         if self.ignore:

@@ -61,13 +61,13 @@ class PBRShader(CyclesShader):
 
     def linkPBRNormal(self, pbr):
         if self.bump:
-            self.links.new(self.bump.outputs["Normal"], pbr.inputs["Normal"])
-            self.links.new(
+            self.link(self.bump.outputs["Normal"], pbr.inputs["Normal"])
+            self.link(
                 self.bump.outputs["Normal"], pbr.inputs["Clearcoat Normal"])
 
         elif self.normal:
-            self.links.new(self.normal.outputs["Normal"], pbr.inputs["Normal"])
-            self.links.new(
+            self.link(self.normal.outputs["Normal"], pbr.inputs["Normal"])
+            self.link(
                 self.normal.outputs["Normal"], pbr.inputs["Clearcoat Normal"])
 
     def buildCutout(self):
@@ -79,7 +79,7 @@ class PBRShader(CyclesShader):
                 self.useCutout = True
             self.pbr.inputs["Alpha"].default_value = alpha
             if tex:
-                self.links.new(tex.outputs[0], self.pbr.inputs["Alpha"])
+                self.link(tex.outputs[0], self.pbr.inputs["Alpha"])
         else:
             CyclesShader.buildCutout(self)
 
@@ -137,7 +137,7 @@ class PBRShader(CyclesShader):
         # Specular
         strength, strtex = self.getColorTex(
             "getChannelGlossyLayeredWeight", "NONE", 1.0, False)
-        if self.material.shader == 'UBER_IRAY':
+        if self.material.shader_key == 'UBER_IRAY':
             if self.material.basemix == 0:    # Metallic/Roughness
                 # principled specular = iray glossy reflectivity * iray glossy layered weight * iray glossy color / 0.8
                 refl, reftex = self.getColorTex(
@@ -168,12 +168,12 @@ class PBRShader(CyclesShader):
         if tex and useTex:
             tex = self.multiplyScalarTex(UtilityStatic.clamp(factor), tex)
             if tex:
-                self.links.new(tex.outputs[0], self.pbr.inputs["Specular"])
+                self.link(tex.outputs[0], self.pbr.inputs["Specular"])
 
         # Clearcoat
         top, toptex = self.getColorTex(["Top Coat Weight"], "NONE", 1.0, False)
 
-        if self.material.shader == 'UBER_IRAY':
+        if self.material.shader_key == 'UBER_IRAY':
             if self.material.basemix == 0:    # Metallic/Roughness
                 refl, reftex = self.getColorTex(
                     "getChannelGlossyReflectivity", "NONE", 0.5, False, useTex)
@@ -191,7 +191,7 @@ class PBRShader(CyclesShader):
         if tex and useTex:
             tex = self.multiplyScalarTex(UtilityStatic.clamp(value), tex)
             if tex:
-                self.links.new(tex.outputs[0], self.pbr.inputs["Clearcoat"])
+                self.link(tex.outputs[0], self.pbr.inputs["Clearcoat"])
 
         rough, tex = self.getColorTex(["Top Coat Roughness"], "NONE", 1.45)
         self.linkScalar(tex, self.pbr, rough, "Clearcoat Roughness")
@@ -222,7 +222,7 @@ class PBRShader(CyclesShader):
         radius, radtex = self.getSSSRadius(color, ssscolor, ssstex, sssmode)
         self.linkColor(coltex, gamma, color, "Color")
         self.pbr.subsurface_method = Settings.sssMethod
-        self.links.new(gamma.outputs[0], self.pbr.inputs["Subsurface Color"])
+        self.link(gamma.outputs[0], self.pbr.inputs["Subsurface Color"])
         self.linkScalar(wttex, self.pbr, wt, "Subsurface")
         self.linkColor(radtex, self.pbr, radius, "Subsurface Radius")
         self.endSSS()
@@ -268,7 +268,7 @@ class PBRShader(CyclesShader):
                 from daz_import.Elements.ShaderGroup import RayClipShaderGroup
                 self.column += 1
                 clip = self.add_group(RayClipShaderGroup, "DAZ Ray Clip")
-                self.links.new(pbr.outputs[0], clip.inputs["Shader"])
+                self.link(pbr.outputs[0], clip.inputs["Shader"])
                 self.linkColor(coltex, clip, color, "Color")
                 self.cycles = self.eevee = clip
             else:
@@ -333,9 +333,9 @@ class PBRShader(CyclesShader):
         mix = self.add_node("ShaderNodeMixShader")
         mix.inputs[0].default_value = weight
         if wttex:
-            self.links.new(wttex.outputs[0], mix.inputs[0])
-        self.links.new(node1.outputs[0], mix.inputs[1])
-        self.links.new(node2.outputs[0], mix.inputs[2])
+            self.link(wttex.outputs[0], mix.inputs[0])
+        self.link(node1.outputs[0], mix.inputs[1])
+        self.link(node2.outputs[0], mix.inputs[2])
         return mix
 
     def getGlossyRoughness(self):

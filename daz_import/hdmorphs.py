@@ -134,12 +134,12 @@ class DispGroup(ShaderGroup):
         last = None
         for ob, amt, sname, prop, filepath in args:
             tex = self.addImageTexNode(filepath, sname, 1)
-            self.links.new(self.inputs.outputs["UV"], tex.inputs["Vector"])
+            self.link(self.inputs.outputs["UV"], tex.inputs["Vector"])
 
             disp = self.addDispNode(sname, tex)
-            self.links.new(
+            self.link(
                 self.inputs.outputs["Midlevel"], disp.inputs["Midlevel"])
-            self.links.new(self.inputs.outputs["Scale"], disp.inputs["Scale"])
+            self.link(self.inputs.outputs["Scale"], disp.inputs["Scale"])
             if amt and prop:
                 makePropDriver(
                     PropsStatic.ref(prop), disp.inputs["Scale"], "default_value", amt, "%g*x" % ob.DazScale)
@@ -149,18 +149,18 @@ class DispGroup(ShaderGroup):
             else:
                 add = self.addMathNode()
                 add.operation = 'ADD'
-                self.links.new(last.outputs[0], add.inputs[0])
-                self.links.new(disp.outputs[0], add.inputs[1])
+                self.link(last.outputs[0], add.inputs[0])
+                self.link(disp.outputs[0], add.inputs[1])
                 last = add
         if last:
-            self.links.new(last.outputs[0],
+            self.link(last.outputs[0],
                            self.outputs.inputs["Displacement"])
 
 
 class ScalarDispGroup(DispGroup):
     def addDispNode(self, sname, tex):
         disp = self.add_node("ShaderNodeDisplacement", col=2, label=sname)
-        self.links.new(tex.outputs["Color"], disp.inputs["Height"])
+        self.link(tex.outputs["Color"], disp.inputs["Height"])
         return disp
 
     def addMathNode(self):
@@ -170,7 +170,7 @@ class ScalarDispGroup(DispGroup):
 class VectorDispGroup(DispGroup):
     def addDispNode(self, sname, tex):
         disp = self.add_node("ShaderNodeVectorDisplacement", col=2, label=sname)
-        self.links.new(tex.outputs["Color"], disp.inputs["Vector"])
+        self.link(tex.outputs["Color"], disp.inputs["Vector"])
         return disp
 
     def addMathNode(self):
@@ -207,10 +207,10 @@ class DispAdder:
         disp.inputs["Midlevel"].default_value = self.midlevel
         disp.inputs["Scale"].default_value = self.scale
 
-        shader.links.new(texco.outputs["UV"], disp.inputs["UV"])
+        shader.link(texco.outputs["UV"], disp.inputs["UV"])
 
         for node in shader.findNodes("OUTPUT_MATERIAL"):
-            shader.links.new(disp.outputs["Displacement"],
+            shader.link(disp.outputs["Displacement"],
                              node.inputs["Displacement"])
         if self.usePrune:
             CyclesStatic.pruneNodeTree(shader)
@@ -287,10 +287,10 @@ class MixNormalTextureGroup(ShaderGroup):
     def addNodes(self, args):
         mix = self.add_node("ShaderNodeMixRGB", 1)
         mix.blend_type = 'OVERLAY'
-        self.links.new(self.inputs.outputs["Fac"], mix.inputs["Fac"])
-        self.links.new(self.inputs.outputs["Color1"], mix.inputs["Color1"])
-        self.links.new(self.inputs.outputs["Color2"], mix.inputs["Color2"])
-        self.links.new(mix.outputs["Color"], self.outputs.inputs["Color"])
+        self.link(self.inputs.outputs["Fac"], mix.inputs["Fac"])
+        self.link(self.inputs.outputs["Color1"], mix.inputs["Color1"])
+        self.link(self.inputs.outputs["Color2"], mix.inputs["Color2"])
+        self.link(mix.outputs["Color"], self.outputs.inputs["Color"])
 
     def addNodes0(self, args):
         val1 = self.add_node("ShaderNodeValue", 1)
@@ -298,85 +298,85 @@ class MixNormalTextureGroup(ShaderGroup):
         vmult1 = self.add_node("ShaderNodeMixRGB", 2)
         vmult1.blend_type = 'MULTIPLY'
         vmult1.inputs[0].default_value = 1
-        self.links.new(val1.outputs[0], vmult1.inputs[1])
-        self.links.new(self.inputs.outputs["Color1"], vmult1.inputs[2])
+        self.link(val1.outputs[0], vmult1.inputs[1])
+        self.link(self.inputs.outputs["Color1"], vmult1.inputs[2])
 
         val2 = self.add_node("ShaderNodeValue", 1)
         val2.outputs[0].default_value = -1
         comb1 = self.add_node("ShaderNodeCombineRGB", 2)
-        self.links.new(val2.outputs[0], comb1.inputs[0])
-        self.links.new(val2.outputs[0], comb1.inputs[1])
+        self.link(val2.outputs[0], comb1.inputs[0])
+        self.link(val2.outputs[0], comb1.inputs[1])
         add1 = self.add_node("ShaderNodeMath", 2)
         add1.operation = 'ADD'
-        self.links.new(val2.outputs[0], add1.inputs[0])
-        self.links.new(self.inputs.outputs["Fac"], add1.inputs[1])
-        self.links.new(add1.outputs[0], comb1.inputs[2])
+        self.link(val2.outputs[0], add1.inputs[0])
+        self.link(self.inputs.outputs["Fac"], add1.inputs[1])
+        self.link(add1.outputs[0], comb1.inputs[2])
 
         val3 = self.add_node("ShaderNodeValue", 1)
         val3.outputs[0].default_value = -2
         val4 = self.add_node("ShaderNodeValue", 1)
         val4.outputs[0].default_value = 2
         comb2 = self.add_node("ShaderNodeCombineRGB", 2)
-        self.links.new(val3.outputs[0], comb2.inputs[0])
-        self.links.new(val3.outputs[0], comb2.inputs[1])
-        self.links.new(val4.outputs[0], comb2.inputs[2])
+        self.link(val3.outputs[0], comb2.inputs[0])
+        self.link(val3.outputs[0], comb2.inputs[1])
+        self.link(val4.outputs[0], comb2.inputs[2])
 
         val5 = self.add_node("ShaderNodeValue", 1)
         val5.outputs[0].default_value = 1
         val6 = self.add_node("ShaderNodeValue", 1)
         val6.outputs[0].default_value = -1
         comb3 = self.add_node("ShaderNodeCombineRGB", 2)
-        self.links.new(val5.outputs[0], comb3.inputs[0])
-        self.links.new(val5.outputs[0], comb3.inputs[1])
-        self.links.new(val6.outputs[0], comb3.inputs[2])
+        self.link(val5.outputs[0], comb3.inputs[0])
+        self.link(val5.outputs[0], comb3.inputs[1])
+        self.link(val6.outputs[0], comb3.inputs[2])
 
         vadd1 = self.add_node("ShaderNodeMixRGB", 3)
         vadd1.blend_type = 'ADD'
         vadd1.inputs[0].default_value = 1
-        self.links.new(vmult1.outputs[0], vadd1.inputs[1])
-        self.links.new(comb1.outputs[0], vadd1.inputs[2])
+        self.link(vmult1.outputs[0], vadd1.inputs[1])
+        self.link(comb1.outputs[0], vadd1.inputs[2])
 
         vmult2 = self.add_node("ShaderNodeMixRGB", 3)
         vmult2.blend_type = 'MULTIPLY'
         vmult2.inputs[0].default_value = 1
-        self.links.new(self.inputs.outputs["Color2"], vmult2.inputs[1])
-        self.links.new(comb2.outputs[0], vmult2.inputs[2])
+        self.link(self.inputs.outputs["Color2"], vmult2.inputs[1])
+        self.link(comb2.outputs[0], vmult2.inputs[2])
 
         vadd2 = self.add_node("ShaderNodeMixRGB", 3)
         vadd2.blend_type = 'ADD'
         vadd2.inputs[0].default_value = 1
-        self.links.new(vmult2.outputs[0], vadd2.inputs[1])
-        self.links.new(comb3.outputs[0], vadd2.inputs[2])
+        self.link(vmult2.outputs[0], vadd2.inputs[1])
+        self.link(comb3.outputs[0], vadd2.inputs[2])
 
         dot = self.add_node("ShaderNodeVectorMath", 4)
         dot.operation = 'DOT_PRODUCT'
-        self.links.new(vadd1.outputs[0], dot.inputs[0])
-        self.links.new(vadd2.outputs[0], dot.inputs[1])
+        self.link(vadd1.outputs[0], dot.inputs[0])
+        self.link(vadd2.outputs[0], dot.inputs[1])
 
         sep1 = self.add_node("ShaderNodeSeparateRGB", 4)
-        self.links.new(vadd1.outputs[0], sep1.inputs[0])
+        self.link(vadd1.outputs[0], sep1.inputs[0])
 
         vdiv = self.add_node("ShaderNodeMixRGB", 5)
         vdiv.blend_type = 'DIVIDE'
         vdiv.inputs[0].default_value = 1
-        self.links.new(dot.outputs["Value"], vdiv.inputs[1])
-        self.links.new(sep1.outputs[2], vdiv.inputs[2])
+        self.link(dot.outputs["Value"], vdiv.inputs[1])
+        self.link(sep1.outputs[2], vdiv.inputs[2])
 
         vmult3 = self.add_node("ShaderNodeMixRGB", 5)
         vmult3.blend_type = 'MULTIPLY'
-        self.links.new(self.inputs.outputs["Fac"], vmult3.inputs[0])
-        self.links.new(vadd1.outputs[0], vmult3.inputs[1])
-        self.links.new(vdiv.outputs[0], vmult3.inputs[2])
+        self.link(self.inputs.outputs["Fac"], vmult3.inputs[0])
+        self.link(vadd1.outputs[0], vmult3.inputs[1])
+        self.link(vdiv.outputs[0], vmult3.inputs[2])
 
         vsub2 = self.add_node("ShaderNodeMixRGB", 5)
         vsub2.blend_type = 'SUBTRACT'
-        self.links.new(self.inputs.outputs["Fac"], vsub2.inputs[0])
-        self.links.new(vmult3.outputs[0], vsub2.inputs[1])
-        self.links.new(vadd2.outputs[0], vsub2.inputs[2])
+        self.link(self.inputs.outputs["Fac"], vsub2.inputs[0])
+        self.link(vmult3.outputs[0], vsub2.inputs[1])
+        self.link(vadd2.outputs[0], vsub2.inputs[2])
 
         norm = self.add_node("ShaderNodeVectorMath", 6)
         norm.operation = 'NORMALIZE'
-        self.links.new(vsub2.outputs[0], norm.inputs[0])
+        self.link(vsub2.outputs[0], norm.inputs[0])
 
         val7 = self.add_node("ShaderNodeValue", 6)
         val7.outputs[0].default_value = 0.5
@@ -384,16 +384,16 @@ class MixNormalTextureGroup(ShaderGroup):
         vmult4 = self.add_node("ShaderNodeMixRGB", 7)
         vmult4.blend_type = 'MULTIPLY'
         vmult4.inputs[0].default_value = 1
-        self.links.new(norm.outputs["Vector"], vmult4.inputs[1])
-        self.links.new(val7.outputs[0], vmult4.inputs[2])
+        self.link(norm.outputs["Vector"], vmult4.inputs[1])
+        self.link(val7.outputs[0], vmult4.inputs[2])
 
         vadd4 = self.add_node("ShaderNodeMixRGB", 7)
         vadd4.blend_type = 'ADD'
         vadd4.inputs[0].default_value = 1
-        self.links.new(vmult4.outputs[0], vadd4.inputs[1])
-        self.links.new(val7.outputs[0], vadd4.inputs[2])
+        self.link(vmult4.outputs[0], vadd4.inputs[1])
+        self.link(val7.outputs[0], vadd4.inputs[2])
 
-        self.links.new(vadd4.outputs[0], self.outputs.inputs["Color"])
+        self.link(vadd4.outputs[0], self.outputs.inputs["Color"])
 
 
 class NormalAdder:
@@ -421,11 +421,11 @@ class NormalAdder:
         bump = shader.findNode("BUMP")
 
         if bump:
-            shader.links.new(normal.outputs["Normal"], bump.inputs["Normal"])
+            shader.link(normal.outputs["Normal"], bump.inputs["Normal"])
         else:
             for node in shader.nodes:
                 if "Normal" in node.inputs.keys():
-                    shader.links.new(
+                    shader.link(
                         normal.outputs["Normal"], node.inputs["Normal"])
 
         for ob, amt, fname, prop, filepath in args:
@@ -433,21 +433,21 @@ class NormalAdder:
                 print("No such file: %s" % filepath)
                 continue
             tex = shader.addImageTexNode(filepath, fname, -1)
-            shader.links.new(texco.outputs["UV"], tex.inputs["Vector"])
+            shader.link(texco.outputs["UV"], tex.inputs["Vector"])
 
             mix = shader.add_group(MixNormalTextureGroup,
                                   "DAZ Mix Normal Texture", col=0, force=True)
             mix.inputs["Fac"].default_value = 1
             mix.inputs["Color1"].default_value = (0.5, 0.5, 1, 1)
             if socket:
-                shader.links.new(socket, mix.inputs["Color1"])
-            shader.links.new(tex.outputs["Color"], mix.inputs["Color2"])
+                shader.link(socket, mix.inputs["Color1"])
+            shader.link(tex.outputs["Color"], mix.inputs["Color2"])
             if amt and prop:
                 makePropDriver(
                     PropsStatic.ref(prop), mix.inputs["Fac"], "default_value", amt, "x")
             socket = mix.outputs["Color"]
         if socket:
-            shader.links.new(socket, normal.inputs["Color"])
+            shader.link(socket, normal.inputs["Color"])
         else:
             print("No link to normal map node")
         if self.usePrune:
@@ -715,7 +715,7 @@ class DAZ_OT_BakeMaps(DazPropsOperator, Baker):
         node.extension = 'CLIP'
         node.select = True
         tree.nodes.active = node
-        tree.links.new(texco.outputs["UV"], node.inputs["Vector"])
+        tree.link(texco.outputs["UV"], node.inputs["Vector"])
         return mat
 
     def selectFaces(self, ob, fnums, tile):
