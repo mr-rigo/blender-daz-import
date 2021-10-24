@@ -6,7 +6,6 @@ from daz_import.Lib.Settings import Settings, Settings, Settings
 from daz_import.Lib.Files import MultiFile, ImageFile
 from daz_import.Elements.ShaderGroup import ShaderGroup
 from daz_import.Elements.Groups import DazBoolGroup, DazStringBoolGroup
-from daz_import.Elements.Morph import Selector
 from daz_import.Collection import Collection
 from daz_import.Lib.Errors import *
 from daz_import.utils import *
@@ -122,8 +121,6 @@ class DispGroup(ShaderGroup):
 
     def __init__(self):
         ShaderGroup.__init__(self)
-        
-        
 
     def create(self, node, name, parent):
         ShaderGroup.create(self, node, name, parent, 4)
@@ -224,6 +221,7 @@ class VectorDispAdder(DispAdder):
         return tree.addGroup(VectorDispGroup, "DAZ Vector Disp", col=7, args=args, force=True)
 
 
+@Registrar()
 class DAZ_OT_LoadScalarDisp(DazOperator, LoadMaps, ScalarDispAdder):
     bl_idname = "daz.load_scalar_disp"
     bl_label = "Load Scalar Disp Maps"
@@ -243,6 +241,7 @@ class DAZ_OT_LoadScalarDisp(DazOperator, LoadMaps, ScalarDispAdder):
             self.loadDispMaps(mat, args)
 
 
+@Registrar()
 class DAZ_OT_LoadVectorDisp(DazOperator, LoadMaps, VectorDispAdder):
     bl_idname = "daz.load_vector_disp"
     bl_label = "Load Vector Disp Maps"
@@ -270,8 +269,6 @@ class MixNormalTextureGroup(ShaderGroup):
 
     def __init__(self):
         ShaderGroup.__init__(self)
-        
-        
 
     def create(self, node, name, parent):
         ShaderGroup.create(self, node, name, parent, 8)
@@ -445,6 +442,7 @@ class NormalAdder:
             pruneNodeTree(tree)
 
 
+@Registrar()
 class DAZ_OT_LoadNormalMap(DazOperator, LoadMaps, NormalAdder):
     bl_idname = "daz.load_normal_map"
     bl_label = "Load Normal Maps"
@@ -567,6 +565,7 @@ class Baker:
 # ----------------------------------------------------------
 
 
+@Registrar()
 class DAZ_OT_BakeMaps(DazPropsOperator, Baker):
     bl_idname = "daz.bake_maps"
     bl_label = "Bake Maps"
@@ -736,13 +735,14 @@ class DAZ_OT_BakeMaps(DazPropsOperator, Baker):
 # ----------------------------------------------------------
 
 
+@Registrar()
 class DAZ_OT_LoadBakedMaps(DazPropsOperator, Baker, NormalAdder, ScalarDispAdder):
     bl_idname = "daz.load_baked_maps"
     bl_label = "Load Baked Maps"
     bl_description = "Load baked normal/displacement maps for the selected meshes"
     bl_options = {'UNDO'}
     pool = IsMesh.pool
-    
+
     dispScale: FloatProperty(
         name="Displacement Scale",
         description="Displacement scale",
@@ -822,8 +822,8 @@ def getHDDirs(ob, attr):
     return []
 
 
-def addSkeyToUrls(ob, asset, skey):    
-    
+def addSkeyToUrls(ob, asset, skey):
+
     if asset.hd_url:
         pgs = ob.data.DazDhdmFiles
         if skey.name not in pgs.keys():
@@ -845,18 +845,7 @@ def addSkeyToUrls(ob, asset, skey):
 # -------------------------------------------------------------
 
 
-classes = [
-    DAZ_OT_LoadScalarDisp,
-    DAZ_OT_LoadVectorDisp,
-    DAZ_OT_LoadNormalMap,
-    DAZ_OT_BakeMaps,
-    DAZ_OT_LoadBakedMaps,
-]
-
-
 @Registrar.func
 def register():
     bpy.types.Mesh.DazDhdmFiles = CollectionProperty(type=DazStringBoolGroup)
     bpy.types.Mesh.DazMorphFiles = CollectionProperty(type=DazStringBoolGroup)
-    for cls in classes:
-        bpy.utils.register_class(cls)
