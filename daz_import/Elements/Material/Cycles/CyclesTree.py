@@ -285,8 +285,7 @@ class CyclesShader(CyclesStatic):
 
         mat.use_nodes = True
         mat.node_tree.nodes.clear()
-        self.nodes = mat.node_tree.nodes
-        self.links = mat.node_tree.links
+        self.set_material(mat)
         if self.easy_shader:
             return
 
@@ -369,7 +368,6 @@ class CyclesShader(CyclesStatic):
 # -------------------------------------------------------------
 #   Normal
 # -------------------------------------------------------------
-
 
     def buildNormal(self, uvname):
         if not self.isEnabled("Normal"):
@@ -1627,10 +1625,7 @@ class CyclesShader(CyclesStatic):
     @classmethod
     def create_shader(cls, mat: BlenderMaterial) -> CyclesShader:
         shader = cls(None)
-
-        shader.nodes = mat.node_tree.nodes
-        shader.links = mat.node_tree.links
-
+        shader.set_material(mat)
         return shader
 
     def findNode(self, key):
@@ -1639,6 +1634,10 @@ class CyclesShader(CyclesStatic):
     def set_material(self, mat: BlenderMaterial):
         self.nodes = mat.node_tree.nodes
         self.links = mat.node_tree.links
+
+    def set_material_object(self, obj):
+        self.nodes = obj.nodes
+        self.links = obj.links
 
 # -------------------------------------------------------------
 #   Utilities

@@ -106,7 +106,7 @@ class ShellGroup:
             self.link(mult.outputs[0], mult2.inputs[0])
             self.link(self.displacement, mult2.inputs[1])
             self.link(mult2.outputs[0],
-                           self.outputs.inputs["Displacement"])
+                      self.outputs.inputs["Displacement"])
         else:
             self.link(
                 self.inputs.outputs["Displacement"], self.outputs.inputs["Displacement"])
@@ -868,11 +868,11 @@ class NormalShaderGroup(ShaderGroup):
             uvmap.uv_map = args[0]
 
         uvgrads = self.add_node("ShaderNodeSeparateXYZ",
-                               2, label="UV Gradients", parent=frame)
+                                2, label="UV Gradients", parent=frame)
         self.link(uvmap.outputs["UV"], uvgrads.inputs[0])
 
         tangent = self.add_node("ShaderNodeBump", 3,
-                               label="Tangent", parent=frame)
+                                label="Tangent", parent=frame)
         tangent.invert = True
         tangent.inputs["Distance"].default_value = 1
         self.link(uvgrads.outputs[0], tangent.inputs["Height"])
@@ -884,7 +884,7 @@ class NormalShaderGroup(ShaderGroup):
         self.link(uvgrads.outputs[1], bitangent.inputs["Height"])
 
         geo = self.add_node("ShaderNodeNewGeometry", 3,
-                           label="Normal", parent=frame)
+                            label="Normal", parent=frame)
 
         # Transpose Matrix
         frame = self.nodes.new("NodeFrame")
@@ -1276,8 +1276,7 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator):
         cmat = CyclesMaterial("")
 
         shader = CyclesShader(cmat)
-        shader.nodes = mat.node_tree.nodes
-        shader.links = mat.node_tree.links
+        shader.set_material(mat)
         shader.column = 0
 
         for key, value in self.groups.items():

@@ -23,10 +23,8 @@ class MaterialGroup:
 
         node.name = name
         node.node_tree = group
-
-        self.shader_object.nodes = group.nodes
-        self.shader_object.links = group.links
-
+        
+        self.shader_object.set_material_object(group)
         self.shader_object.inputs = self.shader_object.add_node(
             "NodeGroupInput", 0)
         self.shader_object.outputs = self.shader_object.add_node(

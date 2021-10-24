@@ -122,15 +122,19 @@ class DAZ_OT_MergeMaterials(DazPropsOperator, MaterialMerger):
 
         nodes1 = rehash(tree1.nodes)
         nodes2 = rehash(tree2.nodes)
+        
         if not self.haveSameKeys(nodes1, nodes2, mname1, mname2):
             return False
+        
         if not self.haveSameKeys(tree1.links, tree2.links, mname1, mname2):
             return False
+
         for key1, node1 in nodes1.items():
             key2 = self.fixKey(key1, mname1, mname2)
             node2 = nodes2[key2]
             if not self.areSameNode(node1, node2, mname1, mname2):
                 return False
+
         for link1 in tree1.links:
             hit = False
             for link2 in tree2.links:
@@ -139,6 +143,7 @@ class DAZ_OT_MergeMaterials(DazPropsOperator, MaterialMerger):
                     break
             if not hit:
                 return False
+
         for link2 in tree2.links:
             hit = False
             for link1 in tree1.links:
