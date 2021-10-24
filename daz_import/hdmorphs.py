@@ -213,7 +213,7 @@ class DispAdder:
             shader.link(disp.outputs["Displacement"],
                              node.inputs["Displacement"])
         if self.usePrune:
-            CyclesStatic.pruneNodeTree(shader)
+            CyclesStatic.pruneNodeTree(shader.shader_graph)
 
 
 class ScalarDispAdder(DispAdder):
@@ -446,12 +446,14 @@ class NormalAdder:
                 makePropDriver(
                     PropsStatic.ref(prop), mix.inputs["Fac"], "default_value", amt, "x")
             socket = mix.outputs["Color"]
+        
         if socket:
             shader.link(socket, normal.inputs["Color"])
         else:
             print("No link to normal map node")
+
         if self.usePrune:
-            CyclesStatic.pruneNodeTree(shader)
+            CyclesStatic.pruneNodeTree(shader.shader_graph)
 
 
 @Registrar()

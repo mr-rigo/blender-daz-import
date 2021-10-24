@@ -25,7 +25,6 @@ class CyclesShader(CyclesStatic):
     type = 'CYCLES'
 
     def __init__(self, material: Material):
-        # ShaderGraph integration
         self.shader_graph = ShaderGraph()
         self.material: Material = material
         self.easy_shader = False
@@ -36,7 +35,7 @@ class CyclesShader(CyclesStatic):
 
         self.texnodes: Dict[str, BlenderMaterial] = {}
 
-        self.nodes: List[ShaderNode] = []
+        # self.nodes: List[ShaderNode] = []
         self.links: List[NodeLink] = None
 
         self.group = None
@@ -1635,18 +1634,18 @@ class CyclesShader(CyclesStatic):
         shader.set_material(mat)
         return shader
 
-    def findNode(self, key):
-        return super().findNode(self, key)
+    def findNode(self, key):        
+        return super().findNode(self.shader_graph, key)
 
     def set_material(self, mat: BlenderMaterial):
         mat.use_nodes = True
         self.shader_graph.init(mat)        
-        self.nodes = mat.node_tree.nodes
+        # self.nodes = mat.node_tree.nodes
         self.links = mat.node_tree.links
 
     def set_material_object(self, obj):
         self.shader_graph.init(obj, False)
-        self.nodes = obj.nodes
+        # self.nodes = obj.nodes
         self.links = obj.links
 
 # -------------------------------------------------------------

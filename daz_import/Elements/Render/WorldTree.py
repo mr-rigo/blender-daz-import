@@ -36,7 +36,7 @@ class WorldShader(CyclesShader):
         if socket:
             self.link(socket, output.inputs["Surface"])
 
-        self.pruneNodeTree(self)
+        self.pruneNodeTree(self.shader_graph)
 
     def buildEnvmap(self, envmap):
         from mathutils import Euler
