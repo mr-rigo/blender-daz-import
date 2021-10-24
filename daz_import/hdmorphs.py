@@ -199,9 +199,9 @@ class DispAdder:
         from daz_import.Elements.Material.Cycles import \
             CyclesStatic, CyclesShader
 
-        shader: CyclesShader = CyclesStatic.create_cycles_tree(mat)
+        shader = CyclesShader.create_shader(mat)
 
-        texco = shader.findTexco(shader, 5)
+        texco = shader.findTexco(5)
 
         disp = self.addDispGroup(shader, args)
         disp.inputs["Midlevel"].default_value = self.midlevel
@@ -209,7 +209,7 @@ class DispAdder:
 
         shader.links.new(texco.outputs["UV"], disp.inputs["UV"])
 
-        for node in shader.findNodes(shader, "OUTPUT_MATERIAL"):
+        for node in shader.findNodes("OUTPUT_MATERIAL"):
             shader.links.new(disp.outputs["Displacement"],
                              node.inputs["Displacement"])
         if self.usePrune:
@@ -400,14 +400,16 @@ class NormalAdder:
     def loadNormalMaps(self, mat, args, row):
         from daz_import.driver import makePropDriver
         from daz_import.Elements.Material.Cycles import  \
-            YSIZE,CyclesStatic
+            YSIZE, CyclesStatic, CyclesShader
 
-        shader = CyclesStatic.create_cycles_tree(mat)
-        texco = shader.findTexco(shader, 1)
+        shader = CyclesShader.create_shader(mat)
+
+        texco = shader.findTexco(1)
         shader.ycoords[-1] = shader.ycoords[0] = YSIZE*(2-row)
 
-        normal = shader.findNode(shader, "NORMAL_MAP")
+        normal = shader.findNode("NORMAL_MAP")
         socket = None
+
         if normal is None:
             shader.ycoords[1] -= YSIZE
             normal = shader.addNode("ShaderNodeNormalMap", col=1)
@@ -416,7 +418,8 @@ class NormalAdder:
             if links:
                 socket = links[0].from_socket
 
-        bump = shader.findNode(shader, "BUMP")
+        bump = shader.findNode("BUMP")
+
         if bump:
             shader.links.new(normal.outputs["Normal"], bump.inputs["Normal"])
         else:

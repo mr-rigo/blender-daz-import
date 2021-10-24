@@ -286,7 +286,7 @@ class FadeHairShader(HairShader):
         self.nodes = mat.node_tree.nodes
         self.links = mat.node_tree.links
 
-        self.info = CyclesStatic.findNode(self.shader_object, "HAIR_INFO")
+        self.info = self.shader_object.findNode("HAIR_INFO")
 
         for col in range(NCOLUMNS):
             self.ycoords[col] -= YSIZE

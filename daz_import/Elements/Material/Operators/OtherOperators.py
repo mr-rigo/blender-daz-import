@@ -387,10 +387,10 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, LaunchEditor, IsMesh)
 
     def run(self, context):
         from daz_import.Elements.ShaderGroup import DecalShaderGroup
-        from daz_import.Elements.Material.Cycles import CyclesStatic
+        from daz_import.Elements.Material.Cycles import CyclesStatic, CyclesShader
 
         img = bpy.data.images.load(self.filepath)
-        
+
         if img is None:
             raise DazError("Unable to load file %s" % self.filepath)
 
@@ -402,7 +402,7 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, LaunchEditor, IsMesh)
 
         mat = ob.data.materials[ob.active_material_index]
 
-        tree = CyclesStatic.create_cycles_tree(mat)        
+        tree = CyclesShader.create_shader(mat)
         coll = BlenderStatic.collection(ob)
 
         empty = bpy.data.objects.new(fname, None)
@@ -429,16 +429,16 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, LaunchEditor, IsMesh)
     @staticmethod
     def getFromToSockets(shader, nodeType, slot):
         from daz_import.Elements.Material.Cycles import CyclesShader
-        
+
         shader: CyclesShader
-        
+
         for link in shader.links.values():
             if link.to_node and link.to_node.type == nodeType:
                 if link.to_socket == link.to_node.inputs[slot]:
                     return link.from_socket, link.to_socket
-        
-        nodes = shader.findNodes(shader, nodeType)
-        
+
+        nodes = shader.findNodes(nodeType)
+
         if nodes:
             return None, nodes[0].inputs[slot]
 

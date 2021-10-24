@@ -1,5 +1,3 @@
-from bpy.types import Material
-
 
 class CyclesStatic:
     NCOLUMNS = 20
@@ -7,42 +5,19 @@ class CyclesStatic:
     YSIZE = 250
 
     @classmethod
-    def findTexco(cls, shader, col):
-        if nodes := cls.findNodes(shader, "TEX_COORD"):
-            return nodes[0]
-        else:
-            return shader.addNode("ShaderNodeTexCoord", col)
-
-    @staticmethod
-    def findNodes(shader, nodeType):
-        nodes = []
-        for node in shader.nodes.values():
-            if node.type == nodeType:
-                nodes.append(node)
-        return nodes
-
-    @classmethod
-    def findNode(cls, shader, ntypes):
-        if isinstance(ntypes, list):
-            for ntype in ntypes:
-                node = cls.findNode(shader, ntype)
-                if node:
-                    return node
+    def findNode(cls, shader, keys):
+        if isinstance(keys, list):
+            for key in keys:
+                node = cls.findNode(shader, key)
+                if not node:
+                    continue
+                return node
 
         for node in shader.nodes:
-            if node.type == ntypes:
+            if node.type == keys:
                 return node
 
         return None
-
-    @staticmethod
-    def findLinksFrom(shader, ntype):
-        links = []
-        for link in shader.links:
-            if link.from_node.type == ntype:
-                links.append(link)
-
-        return links
 
     @staticmethod
     def findLinksTo(shader, ntype):
@@ -93,13 +68,3 @@ class CyclesStatic:
                 shader.nodes.remove(node)
 
         return marked
-
-    @classmethod
-    def create_cycles_tree(cls, mat: Material):
-        from daz_import.Elements.Material import CyclesShader
-        shader = CyclesShader(None)
-
-        shader.nodes = mat.node_tree.nodes
-        shader.links = mat.node_tree.links
-
-        return shader

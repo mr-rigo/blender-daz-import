@@ -1,4 +1,4 @@
-# import math
+from __future__ import annotations
 import os
 from typing import Type, Dict, List, Tuple
 from mathutils import Vector
@@ -34,7 +34,7 @@ class CyclesShader(CyclesStatic):
         self.column = 4
 
         self.texnodes: Dict[str, BlenderMaterial] = {}
-        
+
         self.nodes: List[ShaderNode] = []
         self.links: List[NodeLink] = None
 
@@ -366,6 +366,7 @@ class CyclesShader(CyclesStatic):
 # -------------------------------------------------------------
 #   Normal
 # -------------------------------------------------------------
+
 
     def buildNormal(self, uvname):
         if not self.isEnabled("Normal"):
@@ -892,7 +893,8 @@ class CyclesShader(CyclesStatic):
 
         from daz_import.Elements.ShaderGroup import TranslucentShaderGroup
 
-        node = self.addGroup(TranslucentShaderGroup, "DAZ Translucent", size=200)
+        node = self.addGroup(TranslucentShaderGroup,
+                             "DAZ Translucent", size=200)
         node.width = 200
         self.linkColor(tex, node, color, "Color")
         node.inputs["Gamma"].default_value = 3.5
@@ -1145,7 +1147,8 @@ class CyclesShader(CyclesStatic):
         twosided = self.getValue(["Two Sided Light"], False)
         if not twosided:
             from daz_import.Elements.ShaderGroup import OneSidedShaderGroup
-            node = self.addGroup(OneSidedShaderGroup, "DAZ VectorStatic.one-Sided")
+            node = self.addGroup(OneSidedShaderGroup,
+                                 "DAZ VectorStatic.one-Sided")
             self.links.new(self.getCyclesSocket(), node.inputs["Cycles"])
             self.links.new(self.getEeveeSocket(), node.inputs["Eevee"])
             self.cycles = self.eevee = node
@@ -1603,6 +1606,32 @@ class CyclesShader(CyclesStatic):
     def replaceSlot(self, node, slot, value):
         node.inputs[slot].default_value = value
         self.removeLink(node, slot)
+
+    def findTexco(self, col):
+        if nodes := self.findNodes("TEX_COORD"):
+            return nodes[0]
+        else:
+            return self.addNode("ShaderNodeTexCoord", col)
+
+    def findNodes(self, nodeType):
+        nodes = []
+        for node in self.nodes.values():
+            if node.type == nodeType:
+                nodes.append(node)
+        return nodes
+
+    @classmethod
+    def create_shader(cls, mat: BlenderMaterial) -> CyclesShader:
+        shader = cls(None)
+
+        shader.nodes = mat.node_tree.nodes
+        shader.links = mat.node_tree.links
+
+        return shader
+
+    
+    def findNode(self, key):
+        return super().findNode(self, key)
 
 # -------------------------------------------------------------
 #   Utilities
