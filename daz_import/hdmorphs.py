@@ -4,7 +4,7 @@ import bpy
 
 from daz_import.Lib.Settings import Settings, Settings, Settings
 from daz_import.Lib.Files import MultiFile, ImageFile
-from daz_import.cgroup import ShaderGroup
+from daz_import.Elements.ShaderGroup import ShaderGroup
 from daz_import.Elements.Groups import DazBoolGroup, DazStringBoolGroup
 from daz_import.Elements.Morph import Selector
 from daz_import.Collection import Collection

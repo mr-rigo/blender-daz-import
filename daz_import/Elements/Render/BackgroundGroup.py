@@ -1,4 +1,4 @@
-from daz_import.cgroup import ShaderGroup
+from daz_import.Elements.ShaderGroup import ShaderGroup
 
 
 class BackgroundGroup(ShaderGroup):

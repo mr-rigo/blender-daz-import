@@ -9,3 +9,4 @@ from .Hair import __doc__
 from .Finger import DAZ_OT_GetFingerPrint
 from .Material.Operators import *
 from .Animation import __doc__
+from .ShaderGroup import __doc__

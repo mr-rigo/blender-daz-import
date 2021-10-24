@@ -386,7 +386,7 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, LaunchEditor, IsMesh)
         return SingleFile.invoke(self, context, event)
 
     def run(self, context):
-        from daz_import.cgroup import DecalShaderGroup
+        from daz_import.Elements.ShaderGroup import DecalShaderGroup
         from daz_import.Elements.Material.Cycles import CyclesStatic
 
         img = bpy.data.images.load(self.filepath)
