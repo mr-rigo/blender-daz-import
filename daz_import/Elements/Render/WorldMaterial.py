@@ -1,7 +1,6 @@
 import bpy
 import os
 from daz_import.Elements.Color import ColorStatic
-from daz_import.Elements.Material import Material
 from daz_import.Elements.Material.Cycles import CyclesMaterial
 from daz_import.Lib.Settings import Settings
 
@@ -54,15 +53,13 @@ class WorldMaterial(CyclesMaterial):
                 self.background = ColorStatic.BLACK
 
         self.refractive = False
-        Material.build(self, context)
-        from .WorldTree import WorldTree
 
-        self.shader_object = WorldTree(self)
+        super().build(context)
 
         world = self.rna = bpy.data.worlds.new(self.name)
 
         world.use_nodes = True
-        self.shader_object.build()
+        self.shader_object.build()                
         scn.world = world
 
         if self.envmap is None:
@@ -72,3 +69,8 @@ class WorldMaterial(CyclesMaterial):
             vis.glossy = False
             vis.transmission = False
             vis.scatter = False
+
+    def get_shader(self, color=None):
+        from .WorldTree import WorldShader
+
+        return WorldShader(self)

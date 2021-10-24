@@ -3,7 +3,7 @@ from daz_import.Elements.Material.Cycles import CyclesShader, CyclesStatic
 from daz_import.Lib.VectorStatic import VectorStatic
 
 
-class WorldTree(CyclesShader):
+class WorldShader(CyclesShader):
     type = "WORLD"
 
     def __init__(self, material):

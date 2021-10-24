@@ -254,17 +254,17 @@ class FadeGroupShader(HairShader):
 
 class FadeHairShader(HairShader):
 
-    def build(self, mat):
+    def build(self, material):
         from daz_import.Elements.Material.Cycles import findNode, findLinksTo
 
-        if mat.node_tree is None:
-            print("Material %s has no nodes" % mat.name)
+        if material.node_tree is None:
+            print("Material %s has no nodes" % material.name)
             return
-        elif findNode(mat.node_tree, "TRANSPARENCY"):
-            print("Hair material %s already has fading roots" % mat.name)
+        elif findNode(material.node_tree, "TRANSPARENCY"):
+            print("Hair material %s already has fading roots" % material.name)
             return
 
-        self.recoverTree(mat)
+        self.recoverTree(material)
         links = findLinksTo(self.shader_object, "OUTPUT_MATERIAL")
         if not links:
             return
