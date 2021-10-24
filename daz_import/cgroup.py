@@ -2,7 +2,7 @@ import bpy
 from bpy.props import BoolProperty
 from daz_import.Elements.Texture import Map
 from daz_import.Elements.Material.Cycles import CyclesShader
-from daz_import.Elements.Material.PbrTree import PbrTree
+from daz_import.Elements.Material.PbrTree import PBRShader
 from daz_import.Elements.Material import MaterialGroup
 from daz_import.Elements.Color import ColorStatic
 
@@ -133,9 +133,9 @@ class OpaqueShellCyclesGroup(OpaqueShellGroup, CyclesShader):
         OpaqueShellGroup.create(self, node, name, parent)
 
 
-class OpaqueShellPbrGroup(OpaqueShellGroup, PbrTree):
+class OpaqueShellPbrGroup(OpaqueShellGroup, PBRShader):
     def create(self, node, name, parent):
-        PbrTree.__init__(self, parent.material)
+        PBRShader.__init__(self, parent.material)
         OpaqueShellGroup.create(self, node, name, parent)
 
 
@@ -145,9 +145,9 @@ class RefractiveShellCyclesGroup(RefractiveShellGroup, CyclesShader):
         RefractiveShellGroup.create(self, node, name, parent)
 
 
-class RefractiveShellPbrGroup(RefractiveShellGroup, PbrTree):
+class RefractiveShellPbrGroup(RefractiveShellGroup, PBRShader):
     def create(self, node, name, parent):
-        PbrTree.__init__(self, parent.material)
+        PBRShader.__init__(self, parent.material)
         RefractiveShellGroup.create(self, node, name, parent)
 
 

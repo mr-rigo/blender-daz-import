@@ -373,7 +373,7 @@ class Morph(FormulaAsset):
         geonode.morphsValues[self.name] = self.value
 
     def build(self, context, inst, value=-1):
-        from daz_import.geometry import GeoNode, Geometry
+        from daz_import.geometry import GeoNode
         from daz_import.figure import FigureInstance
         from daz_import.Elements.Bone import BoneInstance
 

@@ -59,15 +59,15 @@ class CyclesMaterial(Material):
         self.shader_object.build()
 
     def get_shader(self, color=None) -> CyclesShader:
-        from daz_import.Elements.Material.PbrTree import PbrTree
+        from daz_import.Elements.Material.PbrTree import PBRShader
         from daz_import.Elements.Hair import HairBSDFTree, HairEeveeTree, HairPBRTree
 
         if self.isHair:
             ...
         elif self.metallic:
-            return PbrTree(self)
+            return PBRShader(self)
         elif Settings.materialMethod == 'PRINCIPLED':
-            return PbrTree(self)
+            return PBRShader(self)
         else:
             return CyclesShader(self)
 

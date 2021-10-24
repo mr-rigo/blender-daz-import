@@ -8,7 +8,7 @@ from daz_import.utils import *
 from daz_import.Elements.Material.Cycles import CyclesShader
 
 
-class PbrTree(CyclesShader):
+class PBRShader(CyclesShader):
     def __init__(self, *args):
         super().__init__(*args)
         self.pbr = None
