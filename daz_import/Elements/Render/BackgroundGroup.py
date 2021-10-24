@@ -5,8 +5,8 @@ class BackgroundGroup(ShaderGroup):
     
     def __init__(self):
         super().__init__()
-        self.in_sockets("Color")
-        self.out_sockets("Fac", "Color")
+        
+        
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 2)

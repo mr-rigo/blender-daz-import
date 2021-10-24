@@ -208,8 +208,8 @@ class HairShader(CyclesShader):
 class FadeGroupShader(HairShader):
     def __init__(self):
         self.mat_group: MaterialGroup = MaterialGroup(self)
-        self.in_sockets("Shader", "Intercept", "Random")
-        self.out_sockets("Shader")
+        
+        
         self.info = None
 
     def create(self, node, name, parent):

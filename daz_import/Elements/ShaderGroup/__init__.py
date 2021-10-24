@@ -30,9 +30,11 @@ class ShaderGroup(CyclesShader):
         self.mat_group.outsockets += sockets
 
     def input(self, a: str, b: str):
+        self.in_sockets(b)
         return self.group.inputs.new(a, b)
 
     def output(self, a: str, b: str):
+        self.out_sockets(b)
         return self.group.outputs.new(a, b)
 
 # ---------------------------------------------------------------------
@@ -47,8 +49,6 @@ class ShellGroup:
         self.push = push
 
         self.mat_group = MaterialGroup(self)
-        self.in_sockets("Influence", "Cycles", "Eevee", "UV", "Displacement")
-        self.out_sockets("Cycles", "Eevee", "Displacement")
 
     def create(self, node, name, parent):
         self.mat_group.create(node, name, parent, 10)
@@ -66,9 +66,11 @@ class ShellGroup:
         self.mat_group.insockets += sockets
 
     def input(self, a: str, b: str):
+        self.in_sockets(b)
         return self.group.inputs.new(a, b)
 
     def output(self, a: str, b: str):
+        self.out_sockets(b)
         return self.group.outputs.new(a, b)
 
     def out_sockets(self, *sockets: str):
@@ -184,8 +186,6 @@ class FresnelShaderGroup(ShaderGroup):
 
     def __init__(self):
         super().__init__()
-        self.in_sockets("IOR", "Roughness", "Normal")
-        self.out_sockets("Fac")
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 4)
@@ -247,8 +247,6 @@ class PBRSkinFresnelShaderGroup(FresnelShaderGroup):
 class MixShaderGroup(ShaderGroup):
     def __init__(self):
         super().__init__()
-        self.in_sockets("Fac", "Cycles", "Eevee")
-        self.out_sockets("Cycles", "Eevee")
 
     def create(self, node, name, parent, ncols):
         super().create(node, name, parent, ncols)
@@ -283,8 +281,6 @@ class AddShaderGroup(ShaderGroup):
         self.add1 = None
         self.add2 = None
         super().__init__()
-        self.in_sockets("Cycles", "Eevee")
-        self.out_sockets("Cycles", "Eevee")
 
     def create(self, node, name, parent, ncols):
         super().create(node, name, parent, ncols)
@@ -311,7 +307,6 @@ class EmissionShaderGroup(AddShaderGroup):
 
     def __init__(self):
         super().__init__()
-        self.in_sockets("Color", "Strength")
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 3)
@@ -331,8 +326,6 @@ class EmissionShaderGroup(AddShaderGroup):
 class OneSidedShaderGroup(ShaderGroup):
     def __init__(self):
         super().__init__()
-        self.in_sockets("Cycles", "Eevee")
-        self.out_sockets("Cycles", "Eevee")
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 3)
@@ -364,7 +357,6 @@ class DiffuseShaderGroup(MixShaderGroup):
 
     def __init__(self):
         super().__init__()
-        self.in_sockets("Color", "Roughness", "Normal")
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 3)
@@ -393,7 +385,6 @@ class GlossyShaderGroup(MixShaderGroup):
 
     def __init__(self):
         super().__init__()
-        self.in_sockets("Color", "Roughness", "Normal")
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 3)
@@ -576,7 +567,6 @@ class TransparentShaderGroup(MixShaderGroup):
 
     def __init__(self):
         super().__init__()
-        self.in_sockets("Color")
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 3)
@@ -657,7 +647,6 @@ class MakeupShaderGroup(MixShaderGroup):
 
     def __init__(self):
         super().__init__()
-        self.in_sockets("Color", "Roughness", "Normal")
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 3)
@@ -686,8 +675,6 @@ class RayClipShaderGroup(ShaderGroup):
 
     def __init__(self):
         super().__init__()
-        self.in_sockets("Shader", "Color")
-        self.out_sockets("Shader")
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 4)
@@ -725,7 +712,6 @@ class DualLobeShaderGroup(ShaderGroup):
         self.mat_group.insockets += [
             "Fac", "Cycles", "Eevee", "Weight", "IOR",
             "Roughness 1", "Roughness 2"]
-        self.out_sockets("Cycles", "Eevee")
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 4)
@@ -817,7 +803,6 @@ class VolumeShaderGroup(ShaderGroup):
         self.mat_group.insockets += [
             "Absorbtion Color", "Absorbtion Density", "Scatter Color",
             "Scatter Density", "Scatter Anisotropy"]
-        self.out_sockets("Volume")
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 3)
@@ -859,8 +844,6 @@ class NormalShaderGroup(ShaderGroup):
 
     def __init__(self):
         super().__init__()
-        self.in_sockets("Strength", "Color")
-        self.out_sockets("Normal")
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 8)
@@ -987,7 +970,6 @@ class DetailShaderGroup(ShaderGroup):
         super().__init__()
         self.mat_group.insockets += ["Texture",
                                      "Strength", "Max", "Min", "Normal"]
-        self.out_sockets("Displacement")
 
 
 # ---------------------------------------------------------------------
@@ -1000,7 +982,6 @@ class DisplacementShaderGroup(ShaderGroup):
         super().__init__()
         self.mat_group.insockets += ["Texture",
                                      "Strength", "Max", "Min", "Normal"]
-        self.out_sockets("Displacement")
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 4)
@@ -1047,8 +1028,6 @@ class DecalShaderGroup(ShaderGroup):
 
     def __init__(self):
         super().__init__()
-        self.in_sockets("Color", "Influence")
-        self.out_sockets("Color", "Alpha", "Combined")
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 5)
@@ -1099,8 +1078,6 @@ class LieShaderGroup(ShaderGroup):
 
     def __init__(self):
         super().__init__()
-        self.in_sockets("Vector", "Alpha")
-        self.out_sockets("Color")
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 6)
