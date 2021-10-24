@@ -25,9 +25,10 @@ class CyclesShader(CyclesStatic):
     type = 'CYCLES'
 
     def __init__(self, material: Material):
+        # ShaderGraph integration
+        self.shader_graph = ShaderGraph()
         self.material: Material = material
         self.easy_shader = False
-
         self.ycoords = self.NCOLUMNS * [2 * self.YSIZE]
         self.cycles: ShaderNodeGroup = None
         self.eevee: ShaderNodeGroup = None
@@ -63,7 +64,7 @@ class CyclesShader(CyclesStatic):
         return self.links.new(a, b)
 
     def __repr__(self):
-        return ("<Cycles %s %s %s>" % (self.material.rna, self.nodes, self.links))
+        return ("<Cycles %s %s %s>" % (self.material.rna, self.shader_graph.nodes, self.shader_graph.links))
 
     def getValue(self, channel, default):
         return self.material.channelsData.getValue(channel, default)
@@ -78,7 +79,7 @@ class CyclesShader(CyclesStatic):
         if col is None:
             col = self.column
 
-        node = self.nodes.new(type=stype)
+        node = self.shader_graph.nodes.new(type=stype)
 
         node.location = ((col-2)*self.XSIZE, self.ycoords[col])
         self.ycoords[col] -= (self.YSIZE + size)
@@ -203,13 +204,19 @@ class CyclesShader(CyclesStatic):
         self.buildOutput()
 
     def easy_build(self):
-        graph = ShaderGraph(self.material.rna)
+        graph = self.shader_graph
+
+        graph.clear()
+        graph.use_nodes()
+
+        output = graph.get_output()
+
         shader = DiffuseShader(graph)
 
         # shader.diffuse.default((1, 1, 1, 1))
         # shader.specular.default(0.2)
 
-        graph.output.surface += shader.output
+        output.surface += shader.output
 
         _, diffuse = self.getDiffuseColor()
 
@@ -1592,7 +1599,7 @@ class CyclesShader(CyclesStatic):
     def selectDiffuse(self, marked):
         if self.diffuseTex and marked[self.diffuseTex.name]:
             self.diffuseTex.select = True
-            self.nodes.active = self.diffuseTex
+            self.shader_graph.nodes.active = self.diffuseTex
 
     def getLink(self, node, slot):
         for link in self.links:
@@ -1617,7 +1624,7 @@ class CyclesShader(CyclesStatic):
 
     def findNodes(self, nodeType):
         nodes = []
-        for node in self.nodes.values():
+        for node in self.shader_graph.nodes.values():
             if node.type == nodeType:
                 nodes.append(node)
         return nodes
@@ -1632,10 +1639,13 @@ class CyclesShader(CyclesStatic):
         return super().findNode(self, key)
 
     def set_material(self, mat: BlenderMaterial):
+        mat.use_nodes = True
+        self.shader_graph.init(mat)        
         self.nodes = mat.node_tree.nodes
         self.links = mat.node_tree.links
 
     def set_material_object(self, obj):
+        self.shader_graph.init(obj, False)
         self.nodes = obj.nodes
         self.links = obj.links
 

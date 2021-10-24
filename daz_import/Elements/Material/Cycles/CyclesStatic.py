@@ -6,6 +6,7 @@ class CyclesStatic:
 
     @classmethod
     def findNode(cls, shader, key):
+        # TODO -- 
         for node in shader.nodes:
             if node.type != key:
                 continue
@@ -32,7 +33,7 @@ class CyclesStatic:
     def pruneNodeTree(shader):
         marked = {}
         output = False
-
+        # TODO --
         for node in shader.nodes:
             marked[node.name] = False
             if "Output" in node.name:
@@ -53,7 +54,7 @@ class CyclesStatic:
                 if marked[link.to_node.name]:
                     marked[link.from_node.name] = True
                     n += 1
-
+        # TODO --
         for node in shader.nodes:
             node.select = False
             if not marked[node.name]:

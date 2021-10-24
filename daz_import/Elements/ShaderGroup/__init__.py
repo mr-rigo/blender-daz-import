@@ -130,7 +130,8 @@ class RefractiveShellGroup(ShellGroup):
     def blacken(self):
         transp = self.add_node("ShaderNodeBsdfTransparent", 7)
         transp.inputs[0].default_value[0:3] = ColorStatic.BLACK
-        for node in self.nodes:
+                
+        for node in self.shader_graph.nodes:
             if node.type == 'GROUP' and "Refraction Color" in node.inputs.keys():
                 node.inputs["Refraction Color"].default_value[0:3] = ColorStatic.BLACK
                 self.removeLink(node, "Refraction Color")
@@ -860,7 +861,7 @@ class NormalShaderGroup(ShaderGroup):
 
     def addNodes(self, args):
         # Generate TBN from Bump Node
-        frame = self.nodes.new("NodeFrame")
+        frame = self.shader_graph.nodes.new("NodeFrame")
         frame.label = "Generate TBN from Bump Node"
 
         uvmap = self.add_node("ShaderNodeUVMap", 1, parent=frame)
@@ -887,7 +888,7 @@ class NormalShaderGroup(ShaderGroup):
                             label="Normal", parent=frame)
 
         # Transpose Matrix
-        frame = self.nodes.new("NodeFrame")
+        frame = self.shader_graph.nodes.new("NodeFrame")
         frame.label = "Transpose Matrix"
 
         sep1 = self.add_node("ShaderNodeSeparateXYZ", 4, parent=frame)
@@ -915,7 +916,7 @@ class NormalShaderGroup(ShaderGroup):
         self.link(sep3.outputs[2], comb3.inputs[2])
 
         # Normal Map Processing
-        frame = self.nodes.new("NodeFrame")
+        frame = self.shader_graph.nodes.new("NodeFrame")
         frame.label = "Normal Map Processing"
 
         rgb = self.add_node("ShaderNodeMixRGB", 3, parent=frame)
@@ -934,7 +935,7 @@ class NormalShaderGroup(ShaderGroup):
         self.link(sub.outputs[0], add.inputs[1])
 
         # Matrix * Normal Map
-        frame = self.nodes.new("NodeFrame")
+        frame = self.shader_graph.nodes.new("NodeFrame")
         frame.label = "Matrix * Normal Map"
 
         dot1 = self.add_node("ShaderNodeVectorMath", 6, parent=frame)

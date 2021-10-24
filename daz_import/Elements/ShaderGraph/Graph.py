@@ -1,5 +1,5 @@
 from bpy.types import Material, NodeSocket
-from bpy.types import ShaderNode
+from bpy.types import ShaderNode, NodeLinks, Nodes, NodeTree
 from typing import Any
 
 
@@ -19,7 +19,7 @@ class ShaderProperyInput:
         self.key = key
 
     def __iadd__(self, other):
-        self.node.graph.link(self, other)
+        self.node.graph.connect(self, other)
         return self
 
     def inner(self) -> NodeSocket:
@@ -56,6 +56,7 @@ class BSDFPrincipled(ShaderNodeAbstract):
         self.diffuse = ShaderProperyInput(self, 'Base Color')
         self.specular = ShaderProperyInput(self, 'Specular')
 
+
 class DiffuseShader(ShaderNodeAbstract):
     alias = 'ShaderNodeBsdfDiffuse'
 
@@ -79,44 +80,60 @@ class EmissionShader(ShaderNodeAbstract):
 
 
 class ShaderGraph:
-    def __init__(self, material: Material):
-        self.material = material
-        self.graph = self.material.node_tree
+    def __init__(self, material: Material = None):
+        self.material: Material = None
+        self.nodes: Nodes = None
+        self.links: NodeLinks = None
         self.__output_shader = None
-        self.use_nodes()
-        self.clear()
-
-        self.output = self.get_output()
+        if material:
+            self.init(material)
 
     def use_nodes(self, value=True):
-        self.material.use_nodes = value
+        if self.material:
+            self.material.use_nodes = value
 
     def createNode(self) -> ShaderNodeAbstract:
         return ShaderNodeAbstract(self)
 
-    def link(self, a, b):
+    def connect(self, a, b):
         if isinstance(a, ShaderProperyInput):
             a = a.inner()
 
         if isinstance(b, ShaderProperyInput):
             b = b.inner()
 
-        self.material.node_tree.links.new(a, b)
+        self.links.new(a, b)
 
     def set_alpha(self, blend='HASHED'):
         # ['OPAQUE', 'CLIP', 'HASHED', 'BLEND']
-        self.material.blend_method = blend
+        if self.material:
+            self.material.blend_method = blend
         #mat.use_screen_refraction = useRefraction
         #mat.shadow_method = 'HASHED'
         #mat.shadow_method = 'HASHED'
 
     def create_by_key(self, key: str) -> ShaderNode:
-        return self.material.node_tree.nodes.new(key)
+        return self.nodes.new(key)
 
     def clear(self):
-        self.material.node_tree.nodes.clear()
+        self.nodes.clear()
 
     def get_output(self) -> ShaderOutput:
         if not self.__output_shader:
             self.__output_shader = ShaderOutput(self)
         return self.__output_shader
+
+    def init(self, obj, matrial=True):
+        if not obj:
+            return
+            
+        if matrial:
+            obj: Material
+            obj.use_nodes = True
+            self.material = obj
+            obj = obj.node_tree
+
+        self.nodes = obj.nodes
+        self.links = obj.links
+        # self.nodes = self.material.node_tree.nodes
+        # self.links = self.material.node_tree.links

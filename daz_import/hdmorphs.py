@@ -419,11 +419,11 @@ class NormalAdder:
                 socket = links[0].from_socket
 
         bump = shader.findNode("BUMP")
-
+        
         if bump:
             shader.link(normal.outputs["Normal"], bump.inputs["Normal"])
         else:
-            for node in shader.nodes:
+            for node in shader.shader_graph.nodes:                
                 if "Normal" in node.inputs.keys():
                     shader.link(
                         normal.outputs["Normal"], node.inputs["Normal"])

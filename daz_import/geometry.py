@@ -276,18 +276,22 @@ class GeoNode(Node):
 
         def fixHDMaterial(mat, uvmap):
             keep = True
+
             for node in mat.node_tree.nodes:
                 if node.type in ['UVMAP', 'NORMAL_MAP']:
                     keep = False
                     break
+
             if keep:
                 return mat
-            else:
-                nmat = mat.copy()
-                for node in nmat.node_tree.nodes:
-                    if node.type in ['UVMAP', 'NORMAL_MAP']:
-                        node.uv_map = uvmap
-                return nmat
+            
+            nmat = mat.copy()
+
+            for node in nmat.node_tree.nodes:
+                if node.type in ['UVMAP', 'NORMAL_MAP']:
+                    node.uv_map = uvmap
+
+            return nmat
 
         uvmap = None
         useMulti = (BlenderStatic.modifier(hdob, 'MULTIRES')
@@ -304,6 +308,7 @@ class GeoNode(Node):
             mname = matnames.get(mname, mname)
 
             mat = None
+
             if mat := Material.loaded.get(mname):
                 ...
             else:
@@ -318,7 +323,9 @@ class GeoNode(Node):
     def setHideInfo(self):
         if self.data is None:
             return
+
         self.setHideInfoMesh(self.rna)
+
         if self.hdobject and self.hdobject != self.rna:
             self.setHideInfoMesh(self.hdobject)
 
@@ -326,13 +333,17 @@ class GeoNode(Node):
         if ob.data is None:
             return
         ob.data.DazVertexCount = self.data.vertex_count
+        
         if self.data.hidden_polys:
             hgroup = ob.data.DazMaskGroup
+
             for fn in self.data.hidden_polys:
                 elt = hgroup.add()
                 elt.a = fn
+
         if self.data.vertex_pairs:
             ggroup = ob.data.DazGraftGroup
+            
             for vn, pvn in self.data.vertex_pairs:
                 pair = ggroup.add()
                 pair.a = vn
