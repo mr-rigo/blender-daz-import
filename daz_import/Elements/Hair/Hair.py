@@ -93,11 +93,11 @@ class HairUpdater:
                 pass
 
 
-class HairTree(CyclesShader):
+class HairShader(CyclesShader):
     type = 'HAIR'
 
-    def __init__(self, hmat, color):
-        CyclesShader.__init__(self, hmat)
+    def __init__(self, material, color):
+        super().__init__(material)
         self.color = color
         self.root = Vector(color)
         self.tip = Vector(color)
@@ -114,7 +114,7 @@ class HairTree(CyclesShader):
         self.buildBump()
 
     def addTexco(self, slot):
-        CyclesShader.addTexco(self, slot)
+        super().addTexco(slot)
         self.info = self.addNode('ShaderNodeHairInfo', col=1)
         #self.texco = self.info.outputs["Intercept"]
 
@@ -125,12 +125,12 @@ class HairTree(CyclesShader):
 
     def buildBump(self):
         strength = self.getValue(["Bump Strength"], 1)
-        if False and strength:
-            bump = self.addNode("ShaderNodeBump", col=2)
-            bump.inputs["Strength"].default_value = strength
-            bump.inputs["Distance"].default_value = 0.1 * Settings.scale
-            bump.inputs["Height"].default_value = 1
-            self.normal = bump
+        # if False and strength:
+        #     bump = self.addNode("ShaderNodeBump", col=2)
+        #     bump.inputs["Strength"].default_value = strength
+        #     bump.inputs["Distance"].default_value = 0.1 * Settings.scale
+        #     bump.inputs["Height"].default_value = 1
+        #     self.normal = bump
 
     def linkTangent(self, node):
         self.links.new(
@@ -206,7 +206,7 @@ class HairTree(CyclesShader):
         return add
 
 
-class FadeGroup(HairTree):
+class FadeGroupShader(HairShader):
     def __init__(self):
         self.mat_group: MaterialGroup = MaterialGroup(self)
         self.mat_group.insockets += ["Shader", "Intercept", "Random"]
@@ -214,7 +214,7 @@ class FadeGroup(HairTree):
         self.info = None
 
     def create(self, node, name, parent):
-        HairTree.__init__(self, parent.material, ColorStatic.BLACK)
+        HairShader.__init__(self, parent.material, ColorStatic.BLACK)
         self.mat_group.create(node, name, parent, 4)
         self.group.inputs.new("NodeSocketShader", "Shader")
         self.group.inputs.new("NodeSocketFloat", "Intercept")
@@ -252,34 +252,42 @@ class FadeGroup(HairTree):
         return node
 
 
-class FadeHairTree(HairTree):
+class FadeHairShader(HairShader):
 
     def build(self, mat):
         from daz_import.Elements.Material.Cycles import findNode, findLinksTo
+
         if mat.node_tree is None:
             print("Material %s has no nodes" % mat.name)
             return
         elif findNode(mat.node_tree, "TRANSPARENCY"):
             print("Hair material %s already has fading roots" % mat.name)
             return
+
         self.recoverTree(mat)
         links = findLinksTo(self.shader_object, "OUTPUT_MATERIAL")
-        if links:
-            link = links[0]
-            fade = self.addGroup(FadeGroup, "DAZ Fade Roots", col=5)
-            self.links.new(link.from_node.outputs[0], fade.inputs["Shader"])
-            self.links.new(
-                self.info.outputs["Intercept"], fade.inputs["Intercept"])
-            self.links.new(self.info.outputs["Random"], fade.inputs["Random"])
-            for link in links:
-                self.links.new(fade.outputs["Shader"], link.to_socket)
+        if not links:
+            return
+
+        link = links[0]
+        fade = self.addGroup(FadeGroupShader, "DAZ Fade Roots", col=5)
+        
+        self.links.new(link.from_node.outputs[0], fade.inputs["Shader"])
+        self.links.new(
+            self.info.outputs["Intercept"], fade.inputs["Intercept"])
+        self.links.new(self.info.outputs["Random"], fade.inputs["Random"])
+
+        for link in links:
+            self.links.new(fade.outputs["Shader"], link.to_socket)
 
     def recoverTree(self, mat):
         from daz_import.Elements.Material.Cycles import findNode, YSIZE, NCOLUMNS
+        
         self.shader_object = mat.node_tree
         self.nodes = mat.node_tree.nodes
         self.links = mat.node_tree.links
         self.info = findNode(self.shader_object, "HAIR_INFO")
+
         for col in range(NCOLUMNS):
             self.ycoords[col] -= YSIZE
 
@@ -289,7 +297,7 @@ class FadeHairTree(HairTree):
         tree.build(mat)
 
 
-class HairPBRTree(HairTree):
+class HairPBRShader(HairShader):
 
     def buildLayer(self, uvname):
         self.initLayer()
@@ -303,7 +311,7 @@ class HairPBRTree(HairTree):
         self.buildOutput()
 
 
-class HairBSDFTree(HairTree):
+class HairBSDFShader(HairShader):
 
     def buildLayer(self, uvname):
         self.initLayer()
@@ -374,7 +382,7 @@ class HairBSDFTree(HairTree):
                 False, False, ColorStatic.WHITE, alpha)
 
 
-class HairEeveeTree(HairTree):
+class HairEeveeShader(HairShader):
 
     def buildLayer(self, uvname):
         self.initLayer()

@@ -60,7 +60,7 @@ class CyclesMaterial(Material):
 
     def get_shader(self, color=None) -> CyclesShader:
         from daz_import.Elements.Material.PbrTree import PBRShader
-        from daz_import.Elements.Hair import HairBSDFTree, HairEeveeTree, HairPBRTree
+        from daz_import.Elements.Hair import HairBSDFShader, HairEeveeShader, HairPBRShader
 
         if self.isHair:
             ...
@@ -80,11 +80,11 @@ class CyclesMaterial(Material):
             color = ColorStatic.BLACK
 
         if Settings.hairMaterialMethod_ == 'HAIR_PRINCIPLED':
-            return HairPBRTree(self, color)
+            return HairPBRShader(self, color)
         elif Settings.hairMaterialMethod_ == 'PRINCIPLED':
-            return HairEeveeTree(self, color)
+            return HairEeveeShader(self, color)
         else:
-            return HairBSDFTree(self, color)
+            return HairBSDFShader(self, color)
 
     def postbuild(self):
         Material.postbuild(self)

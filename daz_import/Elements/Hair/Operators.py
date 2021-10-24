@@ -321,7 +321,7 @@ class DAZ_OT_ColorHair(DazPropsOperator, IsHair, ColorProp):
             if mname in mats.keys() and mats[mname][1]:
                 mat = HairMaterial.buildHairMaterial(mname, self.color, context, force=True)
                 if fade:
-                    FadeHairTree.addFade(mat)
+                    FadeHairShader.addFade(mat)
                 mats[mname] = (mat, False)
 
         for _, keep in mats.values():
