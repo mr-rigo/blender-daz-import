@@ -195,18 +195,25 @@ class DispAdder:
         self.layout.prop(self, "midlevel")
 
     def loadDispMaps(self, mat, args):
-        from daz_import.Elements.Material.Cycles import findNodes, findTree, findTexco, pruneNodeTree
-        tree = findTree(mat)
-        texco = findTexco(tree, 5)
-        disp = self.addDispGroup(tree, args)
+
+        from daz_import.Elements.Material.Cycles import \
+             pruneNodeTree, CyclesStatic, CyclesShader
+
+        shader: CyclesShader = CyclesStatic.create_cycles_tree(mat)
+
+        texco = shader.findTexco(shader, 5)
+
+        disp = self.addDispGroup(shader, args)
         disp.inputs["Midlevel"].default_value = self.midlevel
         disp.inputs["Scale"].default_value = self.scale
-        tree.links.new(texco.outputs["UV"], disp.inputs["UV"])
-        for node in findNodes(tree, "OUTPUT_MATERIAL"):
-            tree.links.new(disp.outputs["Displacement"],
-                           node.inputs["Displacement"])
+
+        shader.links.new(texco.outputs["UV"], disp.inputs["UV"])
+
+        for node in shader.findNodes(shader, "OUTPUT_MATERIAL"):
+            shader.links.new(disp.outputs["Displacement"],
+                             node.inputs["Displacement"])
         if self.usePrune:
-            pruneNodeTree(tree)
+            pruneNodeTree(shader)
 
 
 class ScalarDispAdder(DispAdder):
@@ -392,54 +399,56 @@ class MixNormalTextureGroup(ShaderGroup):
 class NormalAdder:
     def loadNormalMaps(self, mat, args, row):
         from daz_import.driver import makePropDriver
-        from daz_import.Elements.Material.Cycles import findTree, findTexco, findNode, findLinksTo, YSIZE, pruneNodeTree
-        tree = findTree(mat)
-        texco = findTexco(tree, 1)
-        tree.ycoords[-1] = tree.ycoords[0] = YSIZE*(2-row)
+        from daz_import.Elements.Material.Cycles import  findNode,\
+            findLinksTo, YSIZE, pruneNodeTree, CyclesStatic
 
-        normal = findNode(tree, "NORMAL_MAP")
+        shader = CyclesStatic.create_cycles_tree(mat)
+        texco = shader.findTexco(shader, 1)
+        shader.ycoords[-1] = shader.ycoords[0] = YSIZE*(2-row)
+
+        normal = findNode(shader, "NORMAL_MAP")
         socket = None
         if normal is None:
-            tree.ycoords[1] -= YSIZE
-            normal = tree.addNode("ShaderNodeNormalMap", col=1)
+            shader.ycoords[1] -= YSIZE
+            normal = shader.addNode("ShaderNodeNormalMap", col=1)
         else:
-            links = findLinksTo(tree, "NORMAL_MAP")
+            links = findLinksTo(shader, "NORMAL_MAP")
             if links:
                 socket = links[0].from_socket
 
-        bump = findNode(tree, "BUMP")
+        bump = findNode(shader, "BUMP")
         if bump:
-            tree.links.new(normal.outputs["Normal"], bump.inputs["Normal"])
+            shader.links.new(normal.outputs["Normal"], bump.inputs["Normal"])
         else:
-            for node in tree.nodes:
+            for node in shader.nodes:
                 if "Normal" in node.inputs.keys():
-                    tree.links.new(
+                    shader.links.new(
                         normal.outputs["Normal"], node.inputs["Normal"])
 
         for ob, amt, fname, prop, filepath in args:
             if not os.path.exists(filepath):
                 print("No such file: %s" % filepath)
                 continue
-            tex = tree.addImageTexNode(filepath, fname, -1)
-            tree.links.new(texco.outputs["UV"], tex.inputs["Vector"])
+            tex = shader.addImageTexNode(filepath, fname, -1)
+            shader.links.new(texco.outputs["UV"], tex.inputs["Vector"])
 
-            mix = tree.addGroup(MixNormalTextureGroup,
+            mix = shader.addGroup(MixNormalTextureGroup,
                                 "DAZ Mix Normal Texture", col=0, force=True)
             mix.inputs["Fac"].default_value = 1
             mix.inputs["Color1"].default_value = (0.5, 0.5, 1, 1)
             if socket:
-                tree.links.new(socket, mix.inputs["Color1"])
-            tree.links.new(tex.outputs["Color"], mix.inputs["Color2"])
+                shader.links.new(socket, mix.inputs["Color1"])
+            shader.links.new(tex.outputs["Color"], mix.inputs["Color2"])
             if amt and prop:
                 makePropDriver(
                     PropsStatic.ref(prop), mix.inputs["Fac"], "default_value", amt, "x")
             socket = mix.outputs["Color"]
         if socket:
-            tree.links.new(socket, normal.inputs["Color"])
+            shader.links.new(socket, normal.inputs["Color"])
         else:
             print("No link to normal map node")
         if self.usePrune:
-            pruneNodeTree(tree)
+            pruneNodeTree(shader)
 
 
 @Registrar()

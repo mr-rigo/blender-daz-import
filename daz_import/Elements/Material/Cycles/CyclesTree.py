@@ -34,8 +34,10 @@ class CyclesShader(CyclesStatic):
         self.column = 4
 
         self.texnodes: Dict[str, BlenderMaterial] = {}
+        
         self.nodes: List[ShaderNode] = []
         self.links: List[NodeLink] = None
+
         self.group = None
         self.groups = {}
         self.liegroups = []
