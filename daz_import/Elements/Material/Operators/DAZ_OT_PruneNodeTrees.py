@@ -11,9 +11,9 @@ class DAZ_OT_PruneNodeTrees(DazOperator):
     pool = IsMesh.pool
     
     def run(self, context):
-        from daz_import.Elements.Material.Cycles import pruneNodeTree
+        from daz_import.Elements.Material.Cycles import CyclesStatic
 
         for ob in BlenderStatic.selected_meshes(context):
             for mat in ob.data.materials:
                 if mat.node_tree:
-                    pruneNodeTree(mat.node_tree)
+                    CyclesStatic.pruneNodeTree(mat.node_tree)

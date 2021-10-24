@@ -197,7 +197,7 @@ class DispAdder:
     def loadDispMaps(self, mat, args):
 
         from daz_import.Elements.Material.Cycles import \
-             pruneNodeTree, CyclesStatic, CyclesShader
+            CyclesStatic, CyclesShader
 
         shader: CyclesShader = CyclesStatic.create_cycles_tree(mat)
 
@@ -213,7 +213,7 @@ class DispAdder:
             shader.links.new(disp.outputs["Displacement"],
                              node.inputs["Displacement"])
         if self.usePrune:
-            pruneNodeTree(shader)
+            CyclesStatic.pruneNodeTree(shader)
 
 
 class ScalarDispAdder(DispAdder):
@@ -399,24 +399,24 @@ class MixNormalTextureGroup(ShaderGroup):
 class NormalAdder:
     def loadNormalMaps(self, mat, args, row):
         from daz_import.driver import makePropDriver
-        from daz_import.Elements.Material.Cycles import  findNode,\
-            findLinksTo, YSIZE, pruneNodeTree, CyclesStatic
+        from daz_import.Elements.Material.Cycles import  \
+            YSIZE,CyclesStatic
 
         shader = CyclesStatic.create_cycles_tree(mat)
         texco = shader.findTexco(shader, 1)
         shader.ycoords[-1] = shader.ycoords[0] = YSIZE*(2-row)
 
-        normal = findNode(shader, "NORMAL_MAP")
+        normal = shader.findNode(shader, "NORMAL_MAP")
         socket = None
         if normal is None:
             shader.ycoords[1] -= YSIZE
             normal = shader.addNode("ShaderNodeNormalMap", col=1)
         else:
-            links = findLinksTo(shader, "NORMAL_MAP")
+            links = shader.findLinksTo(shader, "NORMAL_MAP")
             if links:
                 socket = links[0].from_socket
 
-        bump = findNode(shader, "BUMP")
+        bump = shader.findNode(shader, "BUMP")
         if bump:
             shader.links.new(normal.outputs["Normal"], bump.inputs["Normal"])
         else:
@@ -433,7 +433,7 @@ class NormalAdder:
             shader.links.new(texco.outputs["UV"], tex.inputs["Vector"])
 
             mix = shader.addGroup(MixNormalTextureGroup,
-                                "DAZ Mix Normal Texture", col=0, force=True)
+                                  "DAZ Mix Normal Texture", col=0, force=True)
             mix.inputs["Fac"].default_value = 1
             mix.inputs["Color1"].default_value = (0.5, 0.5, 1, 1)
             if socket:
@@ -448,7 +448,7 @@ class NormalAdder:
         else:
             print("No link to normal map node")
         if self.usePrune:
-            pruneNodeTree(shader)
+            CyclesStatic.pruneNodeTree(shader)
 
 
 @Registrar()

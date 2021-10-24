@@ -3,6 +3,7 @@ import bpy
 
 from mathutils import Vector
 from math import floor
+from daz_import.Elements.Material.Cycles.CyclesStatic import CyclesStatic
 
 from daz_import.Lib.Settings import Settings
 from daz_import.Lib.Errors import *
@@ -208,8 +209,7 @@ class HairShader(CyclesShader):
 class FadeGroupShader(HairShader):
     def __init__(self):
         self.mat_group: MaterialGroup = MaterialGroup(self)
-        
-        
+
         self.info = None
 
     def create(self, node, name, parent):
@@ -254,23 +254,23 @@ class FadeGroupShader(HairShader):
 class FadeHairShader(HairShader):
 
     def build(self, material):
-        from daz_import.Elements.Material.Cycles import findNode, findLinksTo
 
         if material.node_tree is None:
             print("Material %s has no nodes" % material.name)
             return
-        elif findNode(material.node_tree, "TRANSPARENCY"):
+        elif CyclesStatic.findNode(material.node_tree, "TRANSPARENCY"):
             print("Hair material %s already has fading roots" % material.name)
             return
 
         self.recoverTree(material)
-        links = findLinksTo(self.shader_object, "OUTPUT_MATERIAL")
+        
+        links = CyclesStatic.findLinksTo(self.shader_object, "OUTPUT_MATERIAL")
         if not links:
             return
 
         link = links[0]
         fade = self.addGroup(FadeGroupShader, "DAZ Fade Roots", col=5)
-        
+
         self.links.new(link.from_node.outputs[0], fade.inputs["Shader"])
         self.links.new(
             self.info.outputs["Intercept"], fade.inputs["Intercept"])
@@ -280,12 +280,13 @@ class FadeHairShader(HairShader):
             self.links.new(fade.outputs["Shader"], link.to_socket)
 
     def recoverTree(self, mat):
-        from daz_import.Elements.Material.Cycles import findNode, YSIZE, NCOLUMNS
-        
+        from daz_import.Elements.Material.Cycles import YSIZE, NCOLUMNS, CyclesStatic
+
         self.shader_object = mat.node_tree
         self.nodes = mat.node_tree.nodes
         self.links = mat.node_tree.links
-        self.info = findNode(self.shader_object, "HAIR_INFO")
+
+        self.info = CyclesStatic.findNode(self.shader_object, "HAIR_INFO")
 
         for col in range(NCOLUMNS):
             self.ycoords[col] -= YSIZE
