@@ -115,18 +115,18 @@ class HairShader(CyclesShader):
 
     def addTexco(self, slot):
         super().addTexco(slot)
-        self.info = self.addNode('ShaderNodeHairInfo', col=1)
+        self.info = self.add_node('ShaderNodeHairInfo', col=1)
         #self.texco = self.info.outputs["Intercept"]
 
     def buildOutput(self):
         self.column += 1
-        output = self.addNode('ShaderNodeOutputMaterial')
+        output = self.add_node('ShaderNodeOutputMaterial')
         self.links.new(self.active.outputs[0], output.inputs['Surface'])
 
     def buildBump(self):
         strength = self.getValue(["Bump Strength"], 1)
         # if False and strength:
-        #     bump = self.addNode("ShaderNodeBump", col=2)
+        #     bump = self.add_node("ShaderNodeBump", col=2)
         #     bump.inputs["Strength"].default_value = strength
         #     bump.inputs["Distance"].default_value = 0.1 * Settings.scale
         #     bump.inputs["Height"].default_value = 1
@@ -141,7 +141,7 @@ class HairShader(CyclesShader):
             self.info.outputs["Tangent Normal"], node.inputs["Normal"])
 
     def addRamp(self, node, label, root, tip, endpos=1, slot="Color"):
-        ramp = self.addNode('ShaderNodeValToRGB', col=self.column-2)
+        ramp = self.add_node('ShaderNodeValToRGB', col=self.column-2)
         ramp.label = label
         self.links.new(self.info.outputs["Intercept"], ramp.inputs['Fac'])
         ramp.color_ramp.interpolation = 'LINEAR'
@@ -175,7 +175,7 @@ class HairShader(CyclesShader):
         src = ramp
         for tex in texs:
             if tex:
-                mix = self.addNode("ShaderNodeMixRGB", col=self.column-1)
+                mix = self.add_node("ShaderNodeMixRGB", col=self.column-1)
                 mix.blend_type = 'MULTIPLY'
                 mix.inputs[0].default_value = 1.0
                 self.links.new(tex.outputs[0], mix.inputs[1])
@@ -190,7 +190,7 @@ class HairShader(CyclesShader):
         diffuse.inputs["Roughness"].default_value = rough
 
     def mixSockets(self, socket1, socket2, weight):
-        mix = self.addNode('ShaderNodeMixShader')
+        mix = self.add_node('ShaderNodeMixShader')
         mix.inputs[0].default_value = weight
         self.links.new(socket1, mix.inputs[1])
         self.links.new(socket2, mix.inputs[2])
@@ -200,7 +200,7 @@ class HairShader(CyclesShader):
         return self.mixSockets(node1.outputs[0], node2.outputs[0], weight)
 
     def addShaders(self, node1, node2):
-        add = self.addNode('ShaderNodeAddShader')
+        add = self.add_node('ShaderNodeAddShader')
         self.links.new(node1.outputs[0], add.inputs[0])
         self.links.new(node2.outputs[0], add.inputs[1])
         return add
@@ -225,7 +225,7 @@ class FadeGroupShader(HairShader):
         self.info = self.inputs
         ramp = self.addRamp(None, "Root Transparency",
                             (1, 1, 1, 0), (1, 1, 1, 1), endpos=0.15)
-        maprange = self.addNode('ShaderNodeMapRange', col=1)
+        maprange = self.add_node('ShaderNodeMapRange', col=1)
 
         maprange.inputs["From Min"].default_value = 0
         maprange.inputs["From Max"].default_value = 1
@@ -236,7 +236,7 @@ class FadeGroupShader(HairShader):
 
         add = self.addSockets(
             ramp.outputs["Alpha"], maprange.outputs["Result"], col=2)
-        transp = self.addNode('ShaderNodeBsdfTransparent', col=2)
+        transp = self.add_node('ShaderNodeBsdfTransparent', col=2)
         transp.inputs["Color"].default_value[0:3] = ColorStatic.WHITE
         mix = self.mixSockets(
             transp.outputs[0], self.inputs.outputs["Shader"], 1)
@@ -244,7 +244,7 @@ class FadeGroupShader(HairShader):
         self.links.new(mix.outputs[0], self.outputs.inputs["Shader"])
 
     def addSockets(self, socket1, socket2, col=None):
-        node = self.addNode("ShaderNodeMath", col=col)
+        node = self.add_node("ShaderNodeMath", col=col)
         math.operation = 'ADD'
         self.links.new(socket1, node.inputs[0])
         self.links.new(socket2, node.inputs[1])
@@ -269,7 +269,7 @@ class FadeHairShader(HairShader):
             return
 
         link = links[0]
-        fade = self.addGroup(FadeGroupShader, "DAZ Fade Roots", col=5)
+        fade = self.add_group(FadeGroupShader, "DAZ Fade Roots", col=5)
 
         self.links.new(link.from_node.outputs[0], fade.inputs["Shader"])
         self.links.new(
@@ -302,7 +302,7 @@ class HairPBRShader(HairShader):
     def buildLayer(self, uvname):
         self.initLayer()
         self.readColor(0.216)
-        pbr = self.active = self.addNode("ShaderNodeBsdfHairPrincipled")
+        pbr = self.active = self.add_node("ShaderNodeBsdfHairPrincipled")
         ramp = self.addRamp(pbr, "Color", self.root, self.tip)
         self.linkRamp(ramp, [self.roottex, self.tiptex], pbr, "Color")
         pbr.inputs["Roughness"].default_value = 0.2
@@ -332,7 +332,7 @@ class HairBSDFShader(HairShader):
             ["Root Transmission Color"], "COLOR", self.color, useFactor=False)
         tip, tiptex = self.getColorTex(
             ["Tip Transmission Color"], "COLOR", self.color, useFactor=False)
-        trans = self.addNode('ShaderNodeBsdfHair')
+        trans = self.add_node('ShaderNodeBsdfHair')
         trans.component = 'Transmission'
         trans.inputs['Offset'].default_value = 0
         trans.inputs["RoughnessU"].default_value = 1
@@ -344,7 +344,7 @@ class HairBSDFShader(HairShader):
         return trans
 
     def buildHighlight(self):
-        refl = self.addNode('ShaderNodeBsdfHair')
+        refl = self.add_node('ShaderNodeBsdfHair')
         refl.component = 'Reflection'
         refl.inputs['Offset'].default_value = 0
         refl.inputs["RoughnessU"].default_value = 0.02
@@ -360,7 +360,7 @@ class HairBSDFShader(HairShader):
         if aniso:
             if aniso > 0.2:
                 aniso = 0.2
-            node = self.addNode('ShaderNodeBsdfAnisotropic')
+            node = self.add_node('ShaderNodeBsdfAnisotropic')
             self.links.new(self.rootramp.outputs[0], node.inputs["Color"])
             node.inputs["Anisotropy"].default_value = aniso
             arots = self.getValue(["Anisotropy Rotations"], 0)
@@ -374,7 +374,7 @@ class HairBSDFShader(HairShader):
         # Cutout
         alpha = self.getValue(["Cutout Opacity"], 1)
         if alpha < 1:
-            transp = self.addNode("ShaderNodeBsdfTransparent")
+            transp = self.add_node("ShaderNodeBsdfTransparent")
             transp.inputs["Color"].default_value[0:3] = ColorStatic.WHITE
             self.column += 1
             self.active = self.mixShaders(transp, self.active, alpha)
@@ -388,7 +388,7 @@ class HairEeveeShader(HairShader):
         self.initLayer()
         self.readColor(0.216)
 
-        pbr = self.active = self.addNode("ShaderNodeBsdfPrincipled")
+        pbr = self.active = self.add_node("ShaderNodeBsdfPrincipled")
         self.ycoords[self.column] -= 500
         ramp = self.addRamp(pbr, "Color", self.root,
                             self.tip, slot="Base Color")

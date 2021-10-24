@@ -21,7 +21,7 @@ class PBRShader(CyclesShader):
         self.column = 4
         
         try:
-            self.pbr = self.addNode("ShaderNodeBsdfPrincipled")
+            self.pbr = self.add_node("ShaderNodeBsdfPrincipled")
             self.ycoords[self.column] -= 500
         except RuntimeError:
             self.pbr = None
@@ -215,7 +215,7 @@ class PBRShader(CyclesShader):
             return
 
         # a 3.5 gamma for the translucency texture is used to avoid the "white skin" effect
-        gamma = self.addNode("ShaderNodeGamma", col=3)
+        gamma = self.add_node("ShaderNodeGamma", col=3)
         gamma.inputs["Gamma"].default_value = 3.5
 
         ssscolor, ssstex, sssmode = self.getSSSColor()
@@ -255,7 +255,7 @@ class PBRShader(CyclesShader):
         if Settings.refractiveMethod == 'SECOND':
             if weight < 1 or wttex:
                 self.column += 1
-                pbr = pbr2 = self.addNode("ShaderNodeBsdfPrincipled")
+                pbr = pbr2 = self.add_node("ShaderNodeBsdfPrincipled")
                 self.ycoords[self.column] -= 500
                 self.linkPBRNormal(pbr2)
                 pbr2.inputs["Transmission"].default_value = 1.0
@@ -267,7 +267,7 @@ class PBRShader(CyclesShader):
             if self.material.thinWall:
                 from daz_import.Elements.ShaderGroup import RayClipShaderGroup
                 self.column += 1
-                clip = self.addGroup(RayClipShaderGroup, "DAZ Ray Clip")
+                clip = self.add_group(RayClipShaderGroup, "DAZ Ray Clip")
                 self.links.new(pbr.outputs[0], clip.inputs["Shader"])
                 self.linkColor(coltex, clip, color, "Color")
                 self.cycles = self.eevee = clip
@@ -330,7 +330,7 @@ class PBRShader(CyclesShader):
             self.replaceSlot(pbr, "Specular Tint", 1.0)
 
     def mixShaders(self, weight, wttex, node1, node2):
-        mix = self.addNode("ShaderNodeMixShader")
+        mix = self.add_node("ShaderNodeMixShader")
         mix.inputs[0].default_value = weight
         if wttex:
             self.links.new(wttex.outputs[0], mix.inputs[0])

@@ -24,14 +24,14 @@ class WorldShader(CyclesShader):
 
         if envnode and bgnode:
             self.column += 1
-            mix = self.addNode("ShaderNodeMixShader")
+            mix = self.add_node("ShaderNodeMixShader")
             self.links.new(bgnode.outputs["Fac"], mix.inputs[0])
             self.links.new(envnode.outputs["Background"], mix.inputs[1])
             self.links.new(bgnode.outputs["Color"], mix.inputs[2])
             socket = mix.outputs[0]
 
         self.column += 1
-        output = self.addNode("ShaderNodeOutputWorld")
+        output = self.add_node("ShaderNodeOutputWorld")
 
         if socket:
             self.links.new(socket, output.inputs["Surface"])
@@ -60,7 +60,7 @@ class WorldShader(CyclesShader):
         img = self.getImage(envmap, "NONE")
         tex = None
         if img:
-            tex = self.addNode("ShaderNodeTexEnvironment", 3)
+            tex = self.add_node("ShaderNodeTexEnvironment", 3)
             self.setColorSpace(tex, "NONE")
             if img:
                 tex.image = img
@@ -68,7 +68,7 @@ class WorldShader(CyclesShader):
             self.links.new(texco, tex.inputs["Vector"])
         strength = self.getValue(["Environment Intensity"], 1) * value
 
-        envnode = self.addNode("ShaderNodeBackground")
+        envnode = self.add_node("ShaderNodeBackground")
         envnode.inputs["Strength"].default_value = strength
         self.linkColor(tex, envnode, ColorStatic.WHITE)
         socket = envnode.outputs["Background"]
@@ -103,14 +103,14 @@ class WorldShader(CyclesShader):
                 self.linkVector(texco, tex)
         from .BackgroundGroup import BackgroundGroup
 
-        bgnode = self.addGroup(BackgroundGroup, "DAZ Background")
+        bgnode = self.add_group(BackgroundGroup, "DAZ Background")
         self.linkColor(tex, bgnode, background)
         bgnode.inputs["Color"].default_value[0:3] = background
         socket = bgnode.outputs["Color"]
         return bgnode, socket
 
     def addMapping(self, rot, scale, texco, col):
-        mapping = self.addNode("ShaderNodeMapping", col)
+        mapping = self.add_node("ShaderNodeMapping", col)
         mapping.vector_type = 'TEXTURE'
         if hasattr(mapping, "rotation"):
             mapping.rotation = rot

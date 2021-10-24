@@ -5,19 +5,11 @@ class CyclesStatic:
     YSIZE = 250
 
     @classmethod
-    def findNode(cls, shader, keys):
-        if isinstance(keys, list):
-            for key in keys:
-                node = cls.findNode(shader, key)
-                if not node:
-                    continue
-                return node
-
+    def findNode(cls, shader, key):
         for node in shader.nodes:
-            if node.type == keys:
-                return node
-
-        return None
+            if node.type != key:
+                continue
+            return node
 
     @staticmethod
     def findLinksTo(shader, ntype):

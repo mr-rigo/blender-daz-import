@@ -16,7 +16,7 @@ class BackgroundGroup(ShaderGroup):
         self.output("NodeSocketColor", "Color")
 
     def addNodes(self, _=None):
-        lightpath = self.addNode("ShaderNodeLightPath", 1)
+        lightpath = self.add_node("ShaderNodeLightPath", 1)
         
         self.links.new(
             lightpath.outputs["Is Camera Ray"], self.outputs.inputs["Fac"])

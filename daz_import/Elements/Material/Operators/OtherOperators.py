@@ -417,7 +417,7 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, LaunchEditor, IsMesh)
                     print("Channel %s not found" % item.name)
                     continue
                 nname = fname + "_" + cname
-                node = tree.addGroup(DecalShaderGroup, nname, col=3, args=[
+                node = tree.add_group(DecalShaderGroup, nname, col=3, args=[
                                      empty, img], force=True)
                 node.inputs["Influence"].default_value = 1.0
                 if fromSocket:

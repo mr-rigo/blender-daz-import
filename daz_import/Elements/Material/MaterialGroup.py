@@ -25,8 +25,8 @@ class MaterialGroup:
         self.shader_object.nodes = group.nodes
         self.shader_object.links = group.links
 
-        self.shader_object.inputs = self.shader_object.addNode("NodeGroupInput", 0)
-        self.shader_object.outputs = self.shader_object.addNode("NodeGroupOutput", ncols)
+        self.shader_object.inputs = self.shader_object.add_node("NodeGroupInput", 0)
+        self.shader_object.outputs = self.shader_object.add_node("NodeGroupOutput", ncols)
 
         self.shader_object.parent = parent
         self.shader_object.ncols = ncols
