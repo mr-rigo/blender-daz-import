@@ -5,7 +5,7 @@ from bpy.types import ShaderNode
 class MaterialGroup:
     def __init__(self, tree):
         from daz_import.Elements.Material import CyclesShader
-        self.tree: CyclesShader = tree
+        self.shader_object: CyclesShader = tree
 
         self.insockets = []
         self.outsockets = []
@@ -17,19 +17,19 @@ class MaterialGroup:
 
         group = bpy.data.node_groups.new(name, 'ShaderNodeTree')
 
-        self.tree.group = group
+        self.shader_object.group = group
 
         node.name = name
         node.node_tree = group
 
-        self.tree.nodes = group.nodes
-        self.tree.links = group.links
+        self.shader_object.nodes = group.nodes
+        self.shader_object.links = group.links
 
-        self.tree.inputs = self.tree.addNode("NodeGroupInput", 0)
-        self.tree.outputs = self.tree.addNode("NodeGroupOutput", ncols)
+        self.shader_object.inputs = self.shader_object.addNode("NodeGroupInput", 0)
+        self.shader_object.outputs = self.shader_object.addNode("NodeGroupOutput", ncols)
 
-        self.tree.parent = parent
-        self.tree.ncols = ncols
+        self.shader_object.parent = parent
+        self.shader_object.ncols = ncols
         
         return group
 

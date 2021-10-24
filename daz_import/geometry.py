@@ -1025,7 +1025,7 @@ class Shell:
         self.geometry = geo
         self.single = first
         self.match = match
-        self.tree = None
+        self.shader_object = None
 
     def __repr__(self):
         dmat = self.material

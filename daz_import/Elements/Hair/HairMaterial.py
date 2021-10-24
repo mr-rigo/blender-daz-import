@@ -18,8 +18,8 @@ class HairMaterial(CyclesMaterial):
         if self.dontBuild():
             return
         super().build(self, context)        
-        # self.tree = getHairTree(self, color)
-        # self.tree.build()        
+        # self.shader_object = getHairTree(self, color)
+        # self.shader_object.build()        
         self.rna.diffuse_color[0:3] = self.color
 
     @staticmethod

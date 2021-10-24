@@ -262,7 +262,7 @@ class FadeHairTree(HairTree):
             print("Hair material %s already has fading roots" % mat.name)
             return
         self.recoverTree(mat)
-        links = findLinksTo(self.tree, "OUTPUT_MATERIAL")
+        links = findLinksTo(self.shader_object, "OUTPUT_MATERIAL")
         if links:
             link = links[0]
             fade = self.addGroup(FadeGroup, "DAZ Fade Roots", col=5)
@@ -275,10 +275,10 @@ class FadeHairTree(HairTree):
 
     def recoverTree(self, mat):
         from daz_import.Elements.Material.Cycles import findNode, YSIZE, NCOLUMNS
-        self.tree = mat.node_tree
+        self.shader_object = mat.node_tree
         self.nodes = mat.node_tree.nodes
         self.links = mat.node_tree.links
-        self.info = findNode(self.tree, "HAIR_INFO")
+        self.info = findNode(self.shader_object, "HAIR_INFO")
         for col in range(NCOLUMNS):
             self.ycoords[col] -= YSIZE
 

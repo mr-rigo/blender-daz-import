@@ -12,13 +12,13 @@ class CyclesMaterial(Material):
 
     def __init__(self, fileref):
         Material.__init__(self, fileref)        
-        self.tree: CyclesShader = None
+        self.shader_object: CyclesShader = None
         self.useEevee = False
 
     def __repr__(self):
         treetype = None
-        if self.tree:
-            treetype = self.tree.type
+        if self.shader_object:
+            treetype = self.shader_object.type
 
         geoname = None
         if self.geometry:
@@ -48,8 +48,8 @@ class CyclesMaterial(Material):
             return
         super().build(context)
 
-        self.tree = self.get_shader(color)
-        self.tree.build()
+        self.shader_object = self.get_shader(color)
+        self.shader_object.build()
 
     def get_shader(self, color=None) -> CyclesShader:
         from daz_import.Elements.Material.PbrTree import PbrTree
@@ -88,11 +88,11 @@ class CyclesMaterial(Material):
                 area = geo.getBumpArea(me, self.geobump.keys())
                 self.correctBumpArea(area)
 
-        if self.tree:
+        if self.shader_object:
             if Settings.pruneNodes:
-                marked = CyclesStatic.pruneNodeTree(self.tree)
-                if isinstance(self.tree, CyclesShader):
-                    self.tree.selectDiffuse(marked)
+                marked = CyclesStatic.pruneNodeTree(self.shader_object)
+                if isinstance(self.shader_object, CyclesShader):
+                    self.shader_object.selectDiffuse(marked)
 
     def addGeoBump(self, tex, socket):
         bumpmin = self.channelsData.getValue("getChannelBumpMin", -0.01)
@@ -113,7 +113,7 @@ class CyclesMaterial(Material):
             density = width * height / area
             if density == 0.0:
                 continue
-            link = CyclesStatic.getLinkTo(self.tree, tex, "Vector")
+            link = CyclesStatic.getLinkTo(self.shader_object, tex, "Vector")
             if link and link.from_node.type == 'MAPPING':
                 scale = link.from_node.inputs["Scale"]
                 density *= scale.default_value[0] * scale.default_value[1]
@@ -138,7 +138,7 @@ class CyclesMaterial(Material):
         area *= 1e-4/(Settings.scale_*Settings.scale_)
         for socket in self.geoemit:
             socket.default_value /= area
-            for link in self.tree.links:
+            for link in self.shader_object.links:
                 if link.to_socket == socket:
                     node = link.from_node
                     if node.type == 'MATH':

@@ -150,13 +150,13 @@ class CyclesShader(CyclesStatic):
         node.name = nname
         node.label = shname
 
-        if shell.tree:
-            node.node_tree = shell.tree
+        if shell.shader_object:
+            node.node_tree = shell.shader_object
             node.inputs["Influence"].default_value = 1.0
 
             return node
-        elif shell.match and shell.match.tree:
-            node.node_tree = shell.tree = shell.match.tree
+        elif shell.match and shell.match.shader_object:
+            node.node_tree = shell.shader_object = shell.match.shader_object
             node.inputs["Influence"].default_value = 1.0
 
             return node
@@ -180,7 +180,7 @@ class CyclesShader(CyclesStatic):
         group.addNodes((shmat, shell.uv))
 
         node.inputs["Influence"].default_value = 1.0
-        shell.tree = shmat.tree = node.node_tree
+        shell.shader_object = shmat.shader_object = node.node_tree
         shmat.geometry = self.material.geometry
         return node
 

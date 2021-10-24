@@ -180,8 +180,8 @@ class CyclesLightMaterial(CyclesMaterial):
         if self.dontBuild():
             return
         Material.build(self, context)
-        self.tree = LightTree(self)
-        self.tree.build()
+        self.shader_object = LightTree(self)
+        self.shader_object.build()
 
 
 class LightTree(CyclesShader):

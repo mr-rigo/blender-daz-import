@@ -57,12 +57,12 @@ class WorldMaterial(CyclesMaterial):
         Material.build(self, context)
         from .WorldTree import WorldTree
 
-        self.tree = WorldTree(self)
+        self.shader_object = WorldTree(self)
 
         world = self.rna = bpy.data.worlds.new(self.name)
 
         world.use_nodes = True
-        self.tree.build()
+        self.shader_object.build()
         scn.world = world
 
         if self.envmap is None:
