@@ -1,6 +1,5 @@
 from daz_import.Elements.Material import Material
 from daz_import.Elements.Material.Cycles import CyclesMaterial
-from .Hair import getHairTree
 
 
 class HairMaterial(CyclesMaterial):
@@ -9,17 +8,17 @@ class HairMaterial(CyclesMaterial):
         super().__init__(name)
         self.name = name
         self.color = color
+        # self.isHair = True
 
     def guessColor(self):
-        if self.rna:            
+        if self.rna:
             self.rna.diffuse_color = self.color
 
     def build(self, context, color):
         if self.dontBuild():
             return
-        super().build(self, context)        
-        # self.shader_object = getHairTree(self, color)
-        # self.shader_object.build()        
+        super().build(self, context)
+
         self.rna.diffuse_color[0:3] = self.color
 
     @staticmethod

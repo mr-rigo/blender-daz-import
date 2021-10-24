@@ -94,9 +94,10 @@ class HairUpdater:
 
 
 class HairTree(CyclesShader):
+    type = 'HAIR'
+
     def __init__(self, hmat, color):
         CyclesShader.__init__(self, hmat)
-        self.type = 'HAIR'
         self.color = color
         self.root = Vector(color)
         self.tip = Vector(color)
@@ -387,19 +388,6 @@ class HairEeveeTree(HairTree):
         pbr.inputs["Metallic"].default_value = 0.9
         pbr.inputs["Roughness"].default_value = 0.2
         self.buildOutput()
-
-
-def getHairTree(dmat, color=None):
-    if color is None:
-        color = ColorStatic.BLACK
-
-    #print("Creating %s hair material" % Settings.hairMaterialMethod)
-    if Settings.hairMaterialMethod_ == 'HAIR_PRINCIPLED':
-        return HairPBRTree(dmat, color)
-    elif Settings.hairMaterialMethod_ == 'PRINCIPLED':
-        return HairEeveeTree(dmat, color)
-    else:
-        return HairBSDFTree(dmat, color)
 
 
 class Pinning:

@@ -469,6 +469,8 @@ class Geometry(Asset):
 
     def __init__(self, fileref):
         super().__init__(fileref)
+        self.type = None
+        
         self.channelsData: Channels = Channels(self)
 
         self.instances = self.nodes = {}
@@ -486,7 +488,7 @@ class Geometry(Asset):
         self.material_group_vis = {}
 
         self.material_selection_sets = []
-        self.type = None
+        
         self.isStrandHair = False
         self.vertex_count = 0
         self.poly_count = 0

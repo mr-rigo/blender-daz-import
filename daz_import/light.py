@@ -28,9 +28,9 @@ def getMinLightSettings():
 class Light(Node):
 
     def __init__(self, fileref):
-        Node.__init__(self, fileref)
-        
+        super().__init__(fileref)
         self.type = None
+
         self.info = {}
         self.presentation = {}
         self.data = None
@@ -39,19 +39,20 @@ class Light(Node):
     def __repr__(self):
         return ("<Light %s %s>" % (self.id, self.rna))
 
-    def parse(self, struct):
-        Node.parse(self, struct)
-        if "spot" in struct.keys():
+    def parse(self, data: dict):
+        super().parse(data)
+
+        if cache := data.get("spot"):
             self.type = 'SPOT'
-            self.info = struct["spot"]
-        elif "point" in struct.keys():
+            self.info = cache
+        elif cache := data.get("point"):
             self.type = 'POINT'
-            self.info = struct["point"]
-        elif "directional" in struct.keys():
+            self.info = cache
+        elif cache := data.get("directional"):
             self.type = 'DIRECTIONAL'
-            self.info = struct["directional"]
+            self.info = cache
         else:
-            self.presentation = struct["presentation"]
+            self.presentation = data["presentation"]
             print("Strange lamp", self)
 
     def makeInstance(self, fileref, struct):
@@ -60,6 +61,7 @@ class Light(Node):
     def build(self, context, inst):
         lgeo = inst.channelsData.getValue(["Light Geometry"], -1)
         usePhoto = inst.channelsData.getValue(["Photometric Mode"], False)
+
         self.twosided = inst.channelsData.getValue(["Two Sided"], False)
         height = inst.channelsData.getValue(["Height"], 0) * Settings.scale_
         width = inst.channelsData.getValue(["Width"], 0) * Settings.scale_
@@ -102,11 +104,12 @@ class Light(Node):
 
         self.setCyclesProps(lamp)
         self.data = lamp
-        Node.build(self, context, inst)
+        super().build(context, inst)
         inst.material.build(context)
 
-    def setCyclesProps(self, lamp):
-        for attr, op, value in getMinLightSettings():
+    @staticmethod
+    def setCyclesProps(lamp):
+        for attr, _, value in getMinLightSettings():
             if hasattr(lamp, attr):
                 setattr(lamp, attr, value)
 
@@ -116,7 +119,7 @@ class Light(Node):
             ob.rotation_euler[0] += math.pi/2
 
     def postbuild(self, context, inst):
-        Node.postbuild(self, context, inst)
+        super().postbuild(context, inst)
         if self.twosided:
             if inst.rna:
                 ob = inst.rna
@@ -148,9 +151,11 @@ class LightInstance(Instance):
         lamp.color = self.channelsData.getValue(["Color"], ColorStatic.WHITE)
         flux = self.channelsData.getValue(["Flux"], 15000)
         lamp.energy = flux / 15000
-        lamp.shadow_color = self.channelsData.getValue(["Shadow Color"], ColorStatic.BLACK)
+        lamp.shadow_color = self.channelsData.getValue(
+            ["Shadow Color"], ColorStatic.BLACK)
         if hasattr(lamp, "shadow_buffer_soft"):
-            lamp.shadow_buffer_soft = self.channelsData.getValue(["Shadow Softness"], False)
+            lamp.shadow_buffer_soft = self.channelsData.getValue(
+                ["Shadow Softness"], False)
         # if hasattr(lamp, "shadow_buffer_bias"):
         #    bias = self.channelsData.getValue(["Shadow Bias"], None)
         #    if bias:

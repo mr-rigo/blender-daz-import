@@ -2,6 +2,7 @@ import bpy
 import math
 from mathutils import Matrix
 from daz_import.Lib.Settings import Settings
+from daz_import.Elements.Color import ColorStatic
 from daz_import.Elements.Material.Cycles.CyclesStatic import CyclesStatic
 from daz_import.Elements.Material.Cycles.CyclesTree import CyclesShader
 from daz_import.Elements.Material.Material import Material
@@ -11,16 +12,18 @@ from daz_import.Lib import BlenderStatic
 class CyclesMaterial(Material):
 
     def __init__(self, fileref):
-        Material.__init__(self, fileref)        
+        super().__init__(fileref)        
         self.shader_object: CyclesShader = None
         self.useEevee = False
 
     def __repr__(self):
         treetype = None
+
         if self.shader_object:
             treetype = self.shader_object.type
 
         geoname = None
+
         if self.geometry:
             geoname = self.geometry.name
 
@@ -32,20 +35,24 @@ class CyclesMaterial(Material):
         from daz_import.Elements.Finger import isCharacter
 
         color = Settings.clothesColor_
+        
         if isinstance(self.geometry, GeoNode):
             ob = self.geometry.rna
+            
             if ob is None:
                 pass
             elif isCharacter(ob):
                 color = Settings.skinColor_
             elif ob.data and ob.data.DazGraftGroup:
                 color = Settings.skinColor_
+
         MaterialStatic.guessMaterialColor(
             self.rna, Settings.viewportColors, False, color)
 
     def build(self, context, color=None):
         if self.dontBuild():
             return
+        
         super().build(context)
 
         self.shader_object = self.get_shader(color)
@@ -53,19 +60,31 @@ class CyclesMaterial(Material):
 
     def get_shader(self, color=None) -> CyclesShader:
         from daz_import.Elements.Material.PbrTree import PbrTree
-        from daz_import.Elements.Hair import getHairTree
+        from daz_import.Elements.Hair import HairBSDFTree, HairEeveeTree, HairPBRTree
 
         if self.isHair:
-            geo = self.geometry
-            if geo and geo.isStrandHair:
-                geo.hairMaterials.append(self)
-            return getHairTree(self, color)
+            ...
         elif self.metallic:
             return PbrTree(self)
         elif Settings.materialMethod == 'PRINCIPLED':
             return PbrTree(self)
         else:
             return CyclesShader(self)
+
+        geo = self.geometry
+
+        if geo and geo.isStrandHair:
+            geo.hairMaterials.append(self)
+
+        if color is None:
+            color = ColorStatic.BLACK
+
+        if Settings.hairMaterialMethod_ == 'HAIR_PRINCIPLED':
+            return HairPBRTree(self, color)
+        elif Settings.hairMaterialMethod_ == 'PRINCIPLED':
+            return HairEeveeTree(self, color)
+        else:
+            return HairBSDFTree(self, color)
 
     def postbuild(self):
         Material.postbuild(self)

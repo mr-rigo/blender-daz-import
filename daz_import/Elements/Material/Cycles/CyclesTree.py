@@ -22,12 +22,13 @@ from daz_import.Elements.ShaderGraph import ShaderGraph, EmissionShader, Diffuse
 
 
 class CyclesShader(CyclesStatic):
+    type = 'CYCLES'
 
     def __init__(self, material: Material):
         self.material: Material = material
         self.easy_shader = False
 
-        self.type: str = 'CYCLES'
+        # self.type: str = 'CYCLES'
 
         self.ycoords = self.NCOLUMNS * [2 * self.YSIZE]
         self.cycles: ShaderNodeGroup = None
@@ -120,7 +121,7 @@ class CyclesShader(CyclesStatic):
         group: CyclesGroup = cls()
 
         if name in bpy.data.node_groups.keys() and not force:
-            tree = bpy.data.node_groups[name]
+            tree = bpy.data.node_groups.get(name)
             if group.mat_group.checkSockets(tree):
                 node.node_tree = tree
                 return node
@@ -364,7 +365,6 @@ class CyclesShader(CyclesStatic):
 # -------------------------------------------------------------
 #   Normal
 # -------------------------------------------------------------
-
 
     def buildNormal(self, uvname):
         if not self.isEnabled("Normal"):

@@ -26,26 +26,30 @@ class ChannelAsset(Modifier):
     def __repr__(self):
         return ("<Channel %s %s>" % (self.id, self.type))
 
-    def parse(self, struct):
-        Modifier.parse(self, struct)
+    def parse(self, data: dict):
+        super().parse(data)
+
         if not Settings.useMorph_:
             return
-        if "channel" in struct.keys():
-            for key, value in struct["channel"].items():
-                if key == "value":
-                    self.value = value
-                elif key == "min":
-                    self.min = value
-                elif key == "max":
-                    self.max = value
-                elif key == "type":
-                    self.type = value
 
-    def update(self, struct):
-        Modifier.update(self, struct)
-        if ("channel" in struct.keys() and
-                "current_value" in struct["channel"].keys()):
-            self.value = struct["channel"]["current_value"]
+        for key, value in data.get("channel", {}).items():
+            if key == "value":
+                self.value = value
+            elif key == "min":
+                self.min = value
+            elif key == "max":
+                self.max = value
+            elif key == "type":
+                self.type = value
+
+    def update(self, data):
+        super().update(data)
+        value = data.get("channel", {})
+        value = value.get("current_value")
+
+        if value is None:
+            return
+        self.value = value
 
 
 class Alias(ChannelAsset):
@@ -103,22 +107,27 @@ class SkinBinding(Modifier):
 
     def parseSource(self, url):
         asset = self.get_children(url=url)
-        if asset:
-            if (self.parent is None or
-                    self.parent.type != asset.type):
-                msg = ("SkinBinding source bug:\n" +
-                       "URL: %s\n" % url +
-                       "Skin: %s\n" % self +
-                       "Asset: %s\n" % asset +
-                       "Parent: %s\n" % self.parent)
-                ErrorsStatic.report(msg, trigger=(2, 3))
-            if asset != self.parent:
-                self.parent.source = asset
-                asset.sourcing = self.parent
-            Assets.push(self.parent, url)
+        if not asset:
+            return
+
+        if (self.parent is None or
+                self.parent.type != asset.type):
+            msg = ("SkinBinding source bug:\n" +
+                   "URL: %s\n" % url +
+                   "Skin: %s\n" % self +
+                   "Asset: %s\n" % asset +
+                   "Parent: %s\n" % self.parent)
+            ErrorsStatic.report(msg, trigger=(2, 3))
+
+        if asset != self.parent:
+            self.parent.source = asset
+            asset.sourcing = self.parent
+
+        Assets.push(self.parent, url)
 
     def build(self, context, inst):
         ob, rig, geonode = self.getGeoRig(context, inst)
+
         if ob is None or rig is None or ob.type != 'MESH':
             return
 
@@ -129,35 +138,46 @@ class SkinBinding(Modifier):
         makeArmatureModifier(self.name, context, ob, rig)
         self.addVertexGroups(ob, geonode, rig)
         hdob = geonode.hdobject
-        if (hdob and
-            hdob != ob and
-            hdob.DazMultires and
+
+        if not (hdob and
+                hdob != ob and
+                hdob.DazMultires and
                 Settings.useMultires):
-            hdob.parent = ob.parent
-            makeArmatureModifier(self.name, context, hdob, rig)
-            if len(hdob.data.vertices) == len(ob.data.vertices):
-                copyVertexGroups(ob, hdob)
-            else:
-                Settings.hdWeights_.append(hdob.name)
+            return
+
+        hdob.parent = ob.parent
+        makeArmatureModifier(self.name, context, hdob, rig)
+
+        if len(hdob.data.vertices) == len(ob.data.vertices):
+            copyVertexGroups(ob, hdob)
+        else:
+            Settings.hdWeights_.append(hdob.name)
 
     def addVertexGroups(self, ob, geonode, rig):
         bones = geonode.figure.bones
-        for joint in self.skin["joints"]:
+
+        for joint in self.skin.get("joints"):
+
             bname = joint["id"]
+
             if bname in bones.keys():
                 vgname = bones[bname]
             else:
                 vgname = bname
 
             weights = None
+
             if "node_weights" in joint.keys():
                 weights = joint["node_weights"]
+
             elif "local_weights" in joint.keys():
+
                 if bname in rig.data.bones.keys():
                     calc_weights = self.calcLocalWeights(bname, joint, rig)
                     weights = {"values": calc_weights}
                 else:
                     print("Settings weights missing bone:", bname)
+
                     for comp in ["x", "y", "z"]:
                         if comp in joint["local_weights"].keys():
                             weights = joint["local_weights"][comp]
@@ -178,10 +198,13 @@ class SkinBinding(Modifier):
         tail = bone.tail_local
         # find longitudinal axis of the bone and take the other two into consideration
         consider = []
+
         x_delta = abs(head[0] - tail[0])
         y_delta = abs(head[1] - tail[1])
         z_delta = abs(head[2] - tail[2])
+
         max_delta = max(x_delta, y_delta, z_delta)
+
         if x_delta < max_delta:
             consider.append("x")
         if y_delta < max_delta:
@@ -209,9 +232,11 @@ class SkinBinding(Modifier):
 
     def mergeWeights(self, first, second, target):
         # merge the two local_weight groups and calculate arithmetic mean for vertices that are present in both groups
+
         while len(first) > 0 and len(second) > 0:
             a = first.pop()
             b = second.pop()
+
             if a[0] == b[0]:
                 target.append([a[0], (a[1] + b[1]) / 2.0])
             elif a[0] < b[0]:
@@ -220,9 +245,11 @@ class SkinBinding(Modifier):
             else:
                 target.append(b)
                 first.append(a)
+
         while len(first) > 0:
             a = first.pop()
             target.append(a)
+
         while len(second) > 0:
             b = second.pop()
             target.append(b)
@@ -251,6 +278,7 @@ class FormulaAsset(Formula, ChannelAsset):
 
     def parse(self, struct):
         ChannelAsset.parse(self, struct)
+
         if not Settings.useMorphOnly_:
             return
         if "group" in struct.keys():
@@ -259,6 +287,7 @@ class FormulaAsset(Formula, ChannelAsset):
                 words[0] == "" and
                     words[1] == "Pose Controls"):
                 self.group = words[2]
+
         Formula.parse(self, struct)
 
     def build(self, context, inst):
@@ -273,7 +302,7 @@ class FormulaAsset(Formula, ChannelAsset):
 class Morph(FormulaAsset):
 
     def __init__(self, fileref):
-        FormulaAsset.__init__(self, fileref)
+        super().__init__(fileref)
 
         self.vertex_count = 0
         self.deltas = []
@@ -282,29 +311,36 @@ class Morph(FormulaAsset):
     def __repr__(self):
         return ("<Morph %s %f %d %d %s>" % (self.name, self.value, self.vertex_count, len(self.deltas), self.rna))
 
-    def parse(self, struct):
-        FormulaAsset.parse(self, struct)
+    def parse(self, data: dict):
+        super().parse(data)
+
         if not Settings.useMorph_:
             return
-        self.parent = struct["parent"]
-        morph = struct["morph"]
-        if ("deltas" in morph.keys() and
-                "values" in morph["deltas"].keys()):
-            self.deltas = morph["deltas"]["values"]
-        else:
-            print("Morph without deltas: %s", self.name)
-        if "vertex_count" in morph.keys():
-            self.vertex_count = morph["vertex_count"]
-        if "hd_url" in morph.keys():
-            self.hd_url = morph["hd_url"]
 
-    def parseSource(self, url):
-        #print("Skip source", self)
-        pass
+        self.parent = data["parent"]
+        morph = data.get("morph", {})
+
+        deltas = morph.get("deltas", {})
+        deltas = deltas.get("values", {})
+
+        if deltas is not None:
+            self.deltas = deltas
+        else:
+            print(f"Morph without deltas: {self.name}")
+
+        if count := morph.get("vertex_count"):
+            self.vertex_count = count
+
+        if url := morph.get("hd_url"):
+            self.hd_url = url
+
+    def parseSource(self, _):
+        ...
 
     def update(self, data: dict):
         from daz_import.geometry import GeoNode, Geometry
         from daz_import.figure import Figure, FigureInstance
+
         FormulaAsset.update(self, data)
         if not Settings.useMorph_:
             return
@@ -316,6 +352,7 @@ class Morph(FormulaAsset):
 
         if isinstance(parent, Geometry):
             ref = UtilityStatic.inst_ref(data["parent"])
+
             if ref in parent.nodes:
                 geonode = parent.nodes[ref]
             else:
@@ -342,9 +379,11 @@ class Morph(FormulaAsset):
 
         if not Settings.useMorph_:
             return self
+
         if len(self.deltas) == 0:
             print("Morph without deltas: %s" % self.name)
             return self
+
         Formula.build(self, context, inst)
         Modifier.build(self, context)
 
@@ -359,7 +398,7 @@ class Morph(FormulaAsset):
             print("BMO", inst)
             print("  ", asset)
             inst = None
-            
+
             if asset:
                 geonodes = list(asset.nodes.values())
                 if len(geonodes) > 0:
@@ -373,7 +412,7 @@ class Morph(FormulaAsset):
 
         for geonode in geonodes:
             ob = geonode.rna
-            
+
             if value >= 0:
                 self.value = value
                 if self not in geonode.modifiers:
@@ -405,41 +444,44 @@ class Morph(FormulaAsset):
             vn = delta[0]
             me.vertices[vn].co += scale * VectorStatic.create_vector(delta[1:])
 
-    def buildMorph(self, ob,
-                   useBuild=True,
-                   strength=1):
-
-        def buildShapeKey(ob, skey, strength):
-            if strength != 1:
-                scale = Settings.scale_
-                Settings.scale_ *= strength
-            for v in ob.data.vertices:
-                skey.data[v.index].co = v.co
-            if Settings.zup:
-                if isModifiedMesh(ob):
-                    pgs = ob.data.DazOrigVerts
-                    for delta in self.deltas:
-                        vn0 = delta[0]
-                        vn = pgs[str(vn0)].a
-                        if vn >= 0:
-                            skey.data[vn].co += VectorStatic.scaled_v2(
-                                delta[1:])
-                else:
-                    for delta in self.deltas:
-                        vn = delta[0]
-                        skey.data[vn].co += VectorStatic.scaled_v2(delta[1:])
-            else:
-                for delta in self.deltas:
-                    vn = delta[0]
-                    skey.data[vn].co += VectorStatic.scaled_and_convert_vector(
-                        delta[1:])
-            if strength != 1:
-                Settings.scale_ = scale
-
+    def buildMorph(self, ob, useBuild=True, strength=1):
         sname = self.getName()
+
         rig = ob.parent
         skey = addShapekey(ob, sname)
         skey.value = self.value
         self.rna = (skey, ob, sname)
+
         if useBuild:
-            buildShapeKey(ob, skey, strength)
+            self.__buildShapeKey(ob, skey, strength)
+
+    def __buildShapeKey(self, ob, skey, strength):
+        if strength != 1:
+            scale = Settings.scale_
+            Settings.scale_ *= strength
+        
+        for v in ob.data.vertices:
+            skey.data[v.index].co = v.co
+
+        if Settings.zup:
+
+            if isModifiedMesh(ob):
+                pgs = ob.data.DazOrigVerts
+                for delta in self.deltas:
+                    vn0 = delta[0]
+                    vn = pgs[str(vn0)].a
+                    if vn >= 0:
+                        skey.data[vn].co += VectorStatic.scaled_v2(
+                            delta[1:])
+            else:
+                for delta in self.deltas:
+                    vn = delta[0]
+                    skey.data[vn].co += VectorStatic.scaled_v2(delta[1:])
+        else:
+            for delta in self.deltas:
+                vn = delta[0]
+                skey.data[vn].co += VectorStatic.scaled_and_convert_vector(
+                    delta[1:])
+
+        if strength != 1:
+            Settings.scale_ = scale

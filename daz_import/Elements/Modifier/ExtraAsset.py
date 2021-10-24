@@ -5,11 +5,12 @@ from .Modifier import Modifier
 
 
 class ExtraAsset(Modifier):
+    type = None
+
     def __init__(self, fileref):
         super().__init__(fileref)
         self.channelsData: Channels = Channels(self)
         self.extras = {}
-        self.type = None
 
     def __repr__(self):
         return ("<Extra %s %s p: %s>" % (self.id, list(self.extras.keys()), self.parent))

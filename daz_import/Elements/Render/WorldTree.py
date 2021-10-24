@@ -4,10 +4,10 @@ from daz_import.Lib.VectorStatic import VectorStatic
 
 
 class WorldTree(CyclesShader):
+    type = "WORLD"
 
-    def __init__(self, wmat):
-        CyclesShader.__init__(self, wmat)
-        self.type == "WORLD"
+    def __init__(self, material):
+        super().__init__(material)
 
     def build(self):
         backdrop = self.material.backdrop
@@ -32,11 +32,11 @@ class WorldTree(CyclesShader):
 
         self.column += 1
         output = self.addNode("ShaderNodeOutputWorld")
-        
+
         if socket:
             self.links.new(socket, output.inputs["Surface"])
-            
-        CyclesStatic.pruneNodeTree(self)
+
+        self.pruneNodeTree(self)
 
     def buildEnvmap(self, envmap):
         from mathutils import Euler
