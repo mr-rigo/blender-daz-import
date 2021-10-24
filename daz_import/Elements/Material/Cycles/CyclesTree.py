@@ -21,7 +21,7 @@ from daz_import.Elements.Material.Material import Material
 from daz_import.Elements.ShaderGraph import ShaderGraph, EmissionShader, DiffuseShader
 
 
-class CyclesTree(CyclesStatic):
+class CyclesShader(CyclesStatic):
 
     def __init__(self, material: Material):
         self.material: Material = material

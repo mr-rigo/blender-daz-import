@@ -1,6 +1,6 @@
 from .CyclesStatic import CyclesStatic
 from .CyclesMaterial import CyclesMaterial
-from .CyclesTree import CyclesTree
+from .CyclesTree import CyclesShader
 
 
 NCOLUMNS = CyclesStatic.NCOLUMNS

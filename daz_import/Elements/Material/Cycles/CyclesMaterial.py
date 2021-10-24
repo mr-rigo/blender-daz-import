@@ -3,7 +3,7 @@ import math
 from mathutils import Matrix
 from daz_import.Lib.Settings import Settings
 from daz_import.Elements.Material.Cycles.CyclesStatic import CyclesStatic
-from daz_import.Elements.Material.Cycles.CyclesTree import CyclesTree
+from daz_import.Elements.Material.Cycles.CyclesTree import CyclesShader
 from daz_import.Elements.Material.Material import Material
 from daz_import.Lib import BlenderStatic
 
@@ -12,7 +12,7 @@ class CyclesMaterial(Material):
 
     def __init__(self, fileref):
         Material.__init__(self, fileref)        
-        self.tree: CyclesTree = None
+        self.tree: CyclesShader = None
         self.useEevee = False
 
     def __repr__(self):
@@ -51,7 +51,7 @@ class CyclesMaterial(Material):
         self.tree = self.get_shader(color)
         self.tree.build()
 
-    def get_shader(self, color=None) -> CyclesTree:
+    def get_shader(self, color=None) -> CyclesShader:
         from daz_import.Elements.Material.PbrTree import PbrTree
         from daz_import.Elements.Hair import getHairTree
 
@@ -65,7 +65,7 @@ class CyclesMaterial(Material):
         elif Settings.materialMethod == 'PRINCIPLED':
             return PbrTree(self)
         else:
-            return CyclesTree(self)
+            return CyclesShader(self)
 
     def postbuild(self):
         Material.postbuild(self)
@@ -91,7 +91,7 @@ class CyclesMaterial(Material):
         if self.tree:
             if Settings.pruneNodes:
                 marked = CyclesStatic.pruneNodeTree(self.tree)
-                if isinstance(self.tree, CyclesTree):
+                if isinstance(self.tree, CyclesShader):
                     self.tree.selectDiffuse(marked)
 
     def addGeoBump(self, tex, socket):

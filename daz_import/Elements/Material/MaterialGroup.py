@@ -4,16 +4,16 @@ from bpy.types import ShaderNode
 
 class MaterialGroup:
     def __init__(self, tree):
-        from daz_import.Elements.Material import CyclesTree
-        self.tree: CyclesTree = tree
+        from daz_import.Elements.Material import CyclesShader
+        self.tree: CyclesShader = tree
 
         self.insockets = []
         self.outsockets = []
 
     def create(self, node: ShaderNode, name: str, parent, ncols: int):
-        from daz_import.Elements.Material import CyclesTree
+        from daz_import.Elements.Material import CyclesShader
         
-        parent: CyclesTree
+        parent: CyclesShader
 
         group = bpy.data.node_groups.new(name, 'ShaderNodeTree')
 

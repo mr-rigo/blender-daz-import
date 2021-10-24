@@ -5,10 +5,10 @@ from daz_import.Elements.Color import ColorStatic
 from daz_import.Lib.Settings import Settings
 from daz_import.Lib.Errors import *
 from daz_import.utils import *
-from daz_import.Elements.Material.Cycles import CyclesTree
+from daz_import.Elements.Material.Cycles import CyclesShader
 
 
-class PbrTree(CyclesTree):
+class PbrTree(CyclesShader):
     def __init__(self, *args):
         super().__init__(*args)
         self.pbr = None
@@ -26,7 +26,7 @@ class PbrTree(CyclesTree):
             self.pbr = None
             self.type = 'CYCLES'
         if self.pbr is None:
-            CyclesTree.buildLayer(self, uvname)
+            CyclesShader.buildLayer(self, uvname)
             return
         self.cycles = self.eevee = self.pbr
         self.buildNormal(uvname)
@@ -79,7 +79,7 @@ class PbrTree(CyclesTree):
             if tex:
                 self.links.new(tex.outputs[0], self.pbr.inputs["Alpha"])
         else:
-            CyclesTree.buildCutout(self)
+            CyclesShader.buildCutout(self)
 
     def buildVolume(self):
         ...
@@ -92,7 +92,7 @@ class PbrTree(CyclesTree):
             if not ColorStatic.isBlack(color):
                 self.addEmitColor(self.pbr, "Emission")
         else:
-            CyclesTree.buildEmission(self)
+            CyclesShader.buildEmission(self)
             self.postPBR = True
 
     def buildPBRNode(self):

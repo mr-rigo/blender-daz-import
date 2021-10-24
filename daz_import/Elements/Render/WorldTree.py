@@ -1,12 +1,12 @@
 from daz_import.Elements.Color import ColorStatic
-from daz_import.Elements.Material.Cycles import CyclesTree, CyclesStatic
+from daz_import.Elements.Material.Cycles import CyclesShader, CyclesStatic
 from daz_import.Lib.VectorStatic import VectorStatic
 
 
-class WorldTree(CyclesTree):
+class WorldTree(CyclesShader):
 
     def __init__(self, wmat):
-        CyclesTree.__init__(self, wmat)
+        CyclesShader.__init__(self, wmat)
         self.type == "WORLD"
 
     def build(self):

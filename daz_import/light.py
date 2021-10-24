@@ -2,7 +2,7 @@ import bpy
 import math
 from daz_import.Elements.Node import Node, Instance
 
-from daz_import.Elements.Material.Cycles import CyclesMaterial, CyclesTree
+from daz_import.Elements.Material.Cycles import CyclesMaterial, CyclesShader
 from daz_import.Elements.Material import Material
 from daz_import.Elements.Color import ColorStatic
 from daz_import.Lib.Errors import ErrorsStatic
@@ -184,7 +184,7 @@ class CyclesLightMaterial(CyclesMaterial):
         self.tree.build()
 
 
-class LightTree(CyclesTree):
+class LightTree(CyclesShader):
 
     def build(self):
         self.makeTree()

@@ -2,7 +2,7 @@ import bpy
 import os
 from daz_import.Elements.Color import ColorStatic
 from daz_import.Elements.Material import Material
-from daz_import.Elements.Material.Cycles import CyclesMaterial, CyclesTree
+from daz_import.Elements.Material.Cycles import CyclesMaterial, CyclesShader
 from daz_import.Lib.Settings import Settings
 
 

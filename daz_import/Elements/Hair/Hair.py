@@ -8,7 +8,7 @@ from daz_import.Lib.Settings import Settings
 from daz_import.Lib.Errors import *
 from daz_import.utils import *
 from daz_import.Elements.Color import ColorStatic, ColorProp
-from daz_import.Elements.Material.Cycles import CyclesTree
+from daz_import.Elements.Material.Cycles import CyclesShader
 from daz_import.Elements.Material.Data import EnumsHair
 from daz_import.Elements.Morph import Selector
 from daz_import.Elements.Material.MaterialGroup import MaterialGroup
@@ -93,9 +93,9 @@ class HairUpdater:
                 pass
 
 
-class HairTree(CyclesTree):
+class HairTree(CyclesShader):
     def __init__(self, hmat, color):
-        CyclesTree.__init__(self, hmat)
+        CyclesShader.__init__(self, hmat)
         self.type = 'HAIR'
         self.color = color
         self.root = Vector(color)
@@ -113,7 +113,7 @@ class HairTree(CyclesTree):
         self.buildBump()
 
     def addTexco(self, slot):
-        CyclesTree.addTexco(self, slot)
+        CyclesShader.addTexco(self, slot)
         self.info = self.addNode('ShaderNodeHairInfo', col=1)
         #self.texco = self.info.outputs["Intercept"]
 

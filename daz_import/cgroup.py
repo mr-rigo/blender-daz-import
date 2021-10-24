@@ -1,7 +1,7 @@
 import bpy
 from bpy.props import BoolProperty
 from daz_import.Elements.Texture import Map
-from daz_import.Elements.Material.Cycles import CyclesTree
+from daz_import.Elements.Material.Cycles import CyclesShader
 from daz_import.Elements.Material.PbrTree import PbrTree
 from daz_import.Elements.Material import MaterialGroup
 from daz_import.Elements.Color import ColorStatic
@@ -11,7 +11,7 @@ from daz_import.Lib.Settings import Settings
 from daz_import.Lib.Errors import IsMesh, ErrorsStatic, DazPropsOperator, DazError
 
 
-class CyclesGroup(CyclesTree):
+class CyclesGroup(CyclesShader):
     def __init__(self, mat=None):
         super().__init__(mat)
         self.mat_group = MaterialGroup(self)
@@ -127,9 +127,9 @@ class RefractiveShellGroup(ShellGroup):
         self.links.new(add.outputs[0], self.outputs.inputs[slot])
 
 
-class OpaqueShellCyclesGroup(OpaqueShellGroup, CyclesTree):
+class OpaqueShellCyclesGroup(OpaqueShellGroup, CyclesShader):
     def create(self, node, name, parent):
-        CyclesTree.__init__(self, parent.material)
+        CyclesShader.__init__(self, parent.material)
         OpaqueShellGroup.create(self, node, name, parent)
 
 
@@ -139,9 +139,9 @@ class OpaqueShellPbrGroup(OpaqueShellGroup, PbrTree):
         OpaqueShellGroup.create(self, node, name, parent)
 
 
-class RefractiveShellCyclesGroup(RefractiveShellGroup, CyclesTree):
+class RefractiveShellCyclesGroup(RefractiveShellGroup, CyclesShader):
     def create(self, node, name, parent):
-        CyclesTree.__init__(self, parent.material)
+        CyclesShader.__init__(self, parent.material)
         RefractiveShellGroup.create(self, node, name, parent)
 
 
@@ -1247,13 +1247,13 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator):
             self.layout.prop(self, key)
 
     def run(self, context):
-        from daz_import.Elements.Material.Cycles import CyclesMaterial, CyclesTree
+        from daz_import.Elements.Material.Cycles import CyclesMaterial, CyclesShader
         ob = context.object
         mat = ob.data.materials[ob.active_material_index]
         if mat is None:
             raise DazError("No active material")
         cmat = CyclesMaterial("")
-        ctree = CyclesTree(cmat)
+        ctree = CyclesShader(cmat)
         ctree.nodes = mat.node_tree.nodes
         ctree.links = mat.node_tree.links
         ctree.column = 0
