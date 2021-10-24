@@ -386,7 +386,7 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, LaunchEditor, IsMesh)
         return SingleFile.invoke(self, context, event)
 
     def run(self, context):
-        from daz_import.cgroup import DecalGroup
+        from daz_import.cgroup import DecalShaderGroup
         from daz_import.Elements.Material.Cycles import CyclesStatic
 
         img = bpy.data.images.load(self.filepath)
@@ -417,7 +417,7 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, LaunchEditor, IsMesh)
                     print("Channel %s not found" % item.name)
                     continue
                 nname = fname + "_" + cname
-                node = tree.addGroup(DecalGroup, nname, col=3, args=[
+                node = tree.addGroup(DecalShaderGroup, nname, col=3, args=[
                                      empty, img], force=True)
                 node.inputs["Influence"].default_value = 1.0
                 if fromSocket:

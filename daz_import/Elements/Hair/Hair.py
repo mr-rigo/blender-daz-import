@@ -7,10 +7,9 @@ from math import floor
 from daz_import.Lib.Settings import Settings
 from daz_import.Lib.Errors import *
 from daz_import.utils import *
-from daz_import.Elements.Color import ColorStatic, ColorProp
+from daz_import.Elements.Color import ColorStatic
 from daz_import.Elements.Material.Cycles import CyclesShader
 from daz_import.Elements.Material.Data import EnumsHair
-from daz_import.Elements.Morph import Selector
 from daz_import.Elements.Material.MaterialGroup import MaterialGroup
 
 from .HairSystem import HairSystem

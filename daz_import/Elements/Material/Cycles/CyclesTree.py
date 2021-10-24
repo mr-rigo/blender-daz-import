@@ -28,8 +28,6 @@ class CyclesShader(CyclesStatic):
         self.material: Material = material
         self.easy_shader = False
 
-        # self.type: str = 'CYCLES'
-
         self.ycoords = self.NCOLUMNS * [2 * self.YSIZE]
         self.cycles: ShaderNodeGroup = None
         self.eevee: ShaderNodeGroup = None
@@ -112,13 +110,13 @@ class CyclesShader(CyclesStatic):
 
     def addGroup(self, cls: Type, name, col=None,
                  size=0, args=[], force=False):
-        from daz_import.cgroup import CyclesGroup
+        from daz_import.cgroup import ShaderGroup
 
         if col is None:
             col = self.column
 
         node = self.addNode("ShaderNodeGroup", col, size=size)
-        group: CyclesGroup = cls()
+        group: ShaderGroup = cls()
 
         if name in bpy.data.node_groups.keys() and not force:
             tree = bpy.data.node_groups.get(name)
@@ -183,6 +181,7 @@ class CyclesShader(CyclesStatic):
         node.inputs["Influence"].default_value = 1.0
         shell.shader_object = shmat.shader_object = node.node_tree
         shmat.geometry = self.material.geometry
+
         return node
 
     def build(self):
@@ -546,9 +545,9 @@ class CyclesShader(CyclesStatic):
                 wttex = self.raiseToPower(wttex, power, slot)
             color, tex = self.getColorTex(
                 ["Diffuse Overlay Color"], "COLOR", ColorStatic.WHITE)
-            from daz_import.cgroup import DiffuseGroup
+            from daz_import.cgroup import DiffuseShaderGroup
 
-            node = self.addGroup(DiffuseGroup, "DAZ Overlay")
+            node = self.addGroup(DiffuseShaderGroup, "DAZ Overlay")
             self.linkColor(tex, node, color, "Color")
             roughness, roughtex = self.getColorTex(
                 ["Diffuse Overlay Roughness"], "NONE", 0, False)
@@ -620,10 +619,10 @@ class CyclesShader(CyclesStatic):
         if wt == 0:
             return
 
-        from daz_import.cgroup import MakeupGroup
+        from daz_import.cgroup import MakeupShaderGroup
         self.column += 1
 
-        node = self.addGroup(MakeupGroup, "DAZ Makeup", size=100)
+        node = self.addGroup(MakeupShaderGroup, "DAZ Makeup", size=100)
 
         color, tex = self.getColorTex(
             ["Makeup Base Color"], "COLOR", ColorStatic.WHITE, False)
@@ -644,17 +643,17 @@ class CyclesShader(CyclesStatic):
 # -------------------------------------------------------------
 
     def buildDualLobe(self):
-        from daz_import.cgroup import DualLobeGroupUberIray, DualLobeGroupPBRSkin
+        from daz_import.cgroup import DualLobeUberIrayShaderGroup, DualLobePBRSkinShaderGroup
 
         if not self.isEnabled("Dual Lobe Specular"):
             return
 
         self.column += 1
         if self.material.shader == 'PBRSKIN':
-            node = self.addGroup(DualLobeGroupPBRSkin,
+            node = self.addGroup(DualLobePBRSkinShaderGroup,
                                  "DAZ Dual Lobe PBR", size=100)
         else:
-            node = self.addGroup(DualLobeGroupUberIray,
+            node = self.addGroup(DualLobeUberIrayShaderGroup,
                                  "DAZ Dual Lobe Uber", size=100)
         value, tex = self.getColorTex(
             ["Dual Lobe Specular Weight"], "NONE", 0.5, False)
@@ -723,8 +722,8 @@ class CyclesShader(CyclesStatic):
         if ColorStatic.isBlack(color) or strength == 0:
             return
 
-        from daz_import.cgroup import FresnelGroup
-        fresnel = self.addGroup(FresnelGroup, "DAZ Fresnel")
+        from daz_import.cgroup import FresnelShaderGroup
+        fresnel = self.addGroup(FresnelShaderGroup, "DAZ Fresnel")
         ior, iortex = self.getFresnelIOR()
         self.linkScalar(iortex, fresnel, ior, "IOR")
         self.linkBumpNormal(fresnel)
@@ -747,9 +746,9 @@ class CyclesShader(CyclesStatic):
             roughness = roughness**2
             value = value**2
 
-        from daz_import.cgroup import GlossyGroup
+        from daz_import.cgroup import GlossyShaderGroup
         self.column += 1
-        glossy = self.addGroup(GlossyGroup, "DAZ Glossy", size=100)
+        glossy = self.addGroup(GlossyShaderGroup, "DAZ Glossy", size=100)
         color, tex = self.getGlossyColor()
 
         self.linkColor(tex, glossy, color, "Color")
@@ -802,9 +801,9 @@ class CyclesShader(CyclesStatic):
         lmode = self.getValue(["Top Coat Layering Mode"], 0)
         fresnel = refltex = None
         if lmode == 2:  # Fresnel
-            from daz_import.cgroup import FresnelGroup
+            from daz_import.cgroup import FresnelShaderGroup
             weight = 0.5
-            fresnel = self.addGroup(FresnelGroup, "DAZ Fresnel")
+            fresnel = self.addGroup(FresnelShaderGroup, "DAZ Fresnel")
             ior, iortex = self.getColorTex(["Top Coat IOR"], "NONE", 1.45)
             self.linkScalar(iortex, fresnel, ior, "IOR")
 
@@ -838,9 +837,9 @@ class CyclesShader(CyclesStatic):
             roughness = 1 - glossiness**2
             roughtex = self.invertTex(glosstex, 5)
 
-        from daz_import.cgroup import TopCoatGroup
+        from daz_import.cgroup import TopCoatShaderGroup
         self.column += 1
-        top = self.addGroup(TopCoatGroup, "DAZ Top Coat", size=100)
+        top = self.addGroup(TopCoatShaderGroup, "DAZ Top Coat", size=100)
         self.linkColor(coltex, top, color, "Color")
         self.linkScalar(roughtex, top, roughness, "Roughness")
         if self.material.shader == 'PBRSKIN':
@@ -889,9 +888,9 @@ class CyclesShader(CyclesStatic):
         if ColorStatic.isBlack(color):
             return
 
-        from daz_import.cgroup import TranslucentGroup
+        from daz_import.cgroup import TranslucentShaderGroup
 
-        node = self.addGroup(TranslucentGroup, "DAZ Translucent", size=200)
+        node = self.addGroup(TranslucentShaderGroup, "DAZ Translucent", size=200)
         node.width = 200
         self.linkColor(tex, node, color, "Color")
         node.inputs["Gamma"].default_value = 3.5
@@ -1026,16 +1025,16 @@ class CyclesShader(CyclesStatic):
         node, color = self.buildRefractionNode()
         self.mixWithActive(weight, wttex, node)
         if Settings.useFakeCaustics and not self.material.thinWall:
-            from daz_import.cgroup import FakeCausticsGroup
+            from daz_import.cgroup import FakeCausticsShaderGroup
             self.column += 1
-            node = self.addGroup(FakeCausticsGroup, "DAZ Fake Caustics", args=[
+            node = self.addGroup(FakeCausticsShaderGroup, "DAZ Fake Caustics", args=[
                                  color], force=True)
             self.mixWithActive(weight, wttex, node, keep=True)
 
     def buildRefractionNode(self):
-        from daz_import.cgroup import RefractionGroup
+        from daz_import.cgroup import RefractionShaderGroup
         self.column += 1
-        node = self.addGroup(RefractionGroup, "DAZ Refraction", size=150)
+        node = self.addGroup(RefractionShaderGroup, "DAZ Refraction", size=150)
         node.width = 240
 
         color, tex = self.getColorTex(
@@ -1075,8 +1074,8 @@ class CyclesShader(CyclesStatic):
                 self.eevee = node
                 tex = None
             else:
-                from daz_import.cgroup import TransparentGroup
-                node = self.addGroup(TransparentGroup, "DAZ Transparent")
+                from daz_import.cgroup import TransparentShaderGroup
+                node = self.addGroup(TransparentShaderGroup, "DAZ Transparent")
                 self.mixWithActive(alpha, tex, node)
             node.inputs["Color"].default_value[0:3] = ColorStatic.WHITE
             if alpha < 1 or tex:
@@ -1093,9 +1092,9 @@ class CyclesShader(CyclesStatic):
             return
         color = self.getColor("getChannelEmissionColor", ColorStatic.BLACK)
         if not ColorStatic.isBlack(color):
-            from daz_import.cgroup import EmissionGroup
+            from daz_import.cgroup import EmissionShaderGroup
             self.column += 1
-            emit = self.addGroup(EmissionGroup, "DAZ Emission")
+            emit = self.addGroup(EmissionShaderGroup, "DAZ Emission")
             self.addEmitColor(emit, "Color")
             strength = self.getLuminance(emit)
             emit.inputs["Strength"].default_value = strength
@@ -1143,8 +1142,8 @@ class CyclesShader(CyclesStatic):
     def addOneSided(self):
         twosided = self.getValue(["Two Sided Light"], False)
         if not twosided:
-            from daz_import.cgroup import OneSidedGroup
-            node = self.addGroup(OneSidedGroup, "DAZ VectorStatic.one-Sided")
+            from daz_import.cgroup import OneSidedShaderGroup
+            node = self.addGroup(OneSidedShaderGroup, "DAZ VectorStatic.one-Sided")
             self.links.new(self.getCyclesSocket(), node.inputs["Cycles"])
             self.links.new(self.getEeveeSocket(), node.inputs["Eevee"])
             self.cycles = self.eevee = node
@@ -1193,20 +1192,20 @@ class CyclesShader(CyclesStatic):
             return 0, ColorStatic.WHITE, None
 
     def buildVolumeTransmission(self, transcolor, transtex):
-        from daz_import.cgroup import VolumeGroup
+        from daz_import.cgroup import VolumeShaderGroup
 
         dist = self.getValue(["Transmitted Measurement Distance"], 0.0)
 
         if ColorStatic.isBlack(transcolor) or ColorStatic.isWhite(transcolor) or dist == 0.0:
             return
 
-        self.volume = self.addGroup(VolumeGroup, "DAZ Volume")
+        self.volume = self.addGroup(VolumeShaderGroup, "DAZ Volume")
         self.volume.inputs["Absorbtion Density"].default_value = 100/dist
         self.linkColor(transtex, self.volume,
                        transcolor, "Absorbtion Color")
 
     def buildVolumeSubSurface(self, sssmode, ssscolor, ssstex):
-        from daz_import.cgroup import VolumeGroup
+        from daz_import.cgroup import VolumeShaderGroup
         if self.material.shader == 'UBER_IRAY':
             factor = 50
         else:
@@ -1218,14 +1217,14 @@ class CyclesShader(CyclesStatic):
         if not (sssmode == 0 or ColorStatic.isBlack(ssscolor) or ColorStatic.isWhite(ssscolor) or dist == 0.0):
             color, tex = self.invertColor(ssscolor, ssstex, 6)
             if self.volume is None:
-                self.volume = self.addGroup(VolumeGroup, "DAZ Volume")
+                self.volume = self.addGroup(VolumeShaderGroup, "DAZ Volume")
             self.linkColor(tex, self.volume, color, "Scatter Color")
             self.volume.inputs["Scatter Density"].default_value = factor/dist
             self.volume.inputs["Scatter Anisotropy"].default_value = self.getValue([
                                                                                    "SSS Direction"], 0)
         elif sss > 0 and dist > 0.0:
             if self.volume is None:
-                self.volume = self.addGroup(VolumeGroup, "DAZ Volume")
+                self.volume = self.addGroup(VolumeShaderGroup, "DAZ Volume")
             sss, tex = self.getColorTex(["SSS Amount"], "NONE", 0.0)
             color = (sss, sss, sss)
             self.linkColor(tex, self.volume, color, "Scatter Color")
@@ -1289,8 +1288,8 @@ class CyclesShader(CyclesStatic):
                 dmin = dmax
                 dmax = tmp
 
-            from daz_import.cgroup import DisplacementGroup
-            node = self.addGroup(DisplacementGroup, "DAZ Displacement")
+            from daz_import.cgroup import DisplacementShaderGroup
+            node = self.addGroup(DisplacementShaderGroup, "DAZ Displacement")
             self.links.new(tex.outputs[0], node.inputs["Texture"])
             node.inputs["Strength"].default_value = strength
             node.inputs["Max"].default_value = Settings.scale_ * dmax
@@ -1387,7 +1386,7 @@ class CyclesShader(CyclesStatic):
                 self.linkVector(self.texco, texnode)
             return texnode
 
-        from daz_import.cgroup import LieGroup
+        from daz_import.cgroup import LieShaderGroup
 
         node = self.addNode("ShaderNodeGroup", col)
         node.width = 240
@@ -1397,7 +1396,7 @@ class CyclesShader(CyclesStatic):
         except:
             name = "Group"
 
-        group = LieGroup()
+        group = LieShaderGroup()
         group.create(node, name, self)
         self.linkVector(self.texco, node)
         group.addTextureNodes(textures, maps, colorSpace)

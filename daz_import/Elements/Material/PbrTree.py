@@ -265,9 +265,9 @@ class PBRShader(CyclesShader):
                 self.replaceSlot(pbr, "Transmission", weight)
 
             if self.material.thinWall:
-                from daz_import.cgroup import RayClipGroup
+                from daz_import.cgroup import RayClipShaderGroup
                 self.column += 1
-                clip = self.addGroup(RayClipGroup, "DAZ Ray Clip")
+                clip = self.addGroup(RayClipShaderGroup, "DAZ Ray Clip")
                 self.links.new(pbr.outputs[0], clip.inputs["Shader"])
                 self.linkColor(coltex, clip, color, "Color")
                 self.cycles = self.eevee = clip

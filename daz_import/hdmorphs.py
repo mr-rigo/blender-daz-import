@@ -4,7 +4,7 @@ import bpy
 
 from daz_import.Lib.Settings import Settings, Settings, Settings
 from daz_import.Lib.Files import MultiFile, ImageFile
-from daz_import.cgroup import CyclesGroup
+from daz_import.cgroup import ShaderGroup
 from daz_import.Elements.Groups import DazBoolGroup, DazStringBoolGroup
 from daz_import.Elements.Morph import Selector
 from daz_import.Collection import Collection
@@ -118,15 +118,15 @@ class LoadMaps(MultiFile, ImageFile):
 # -------------------------------------------------------------
 
 
-class DispGroup(CyclesGroup):
+class DispGroup(ShaderGroup):
 
     def __init__(self):
-        CyclesGroup.__init__(self)
+        ShaderGroup.__init__(self)
         self.mat_group.insockets += ["Scale", "Midlevel", "UV"]
         self.mat_group.outsockets += ["Displacement"]
 
     def create(self, node, name, parent):
-        CyclesGroup.create(self, node, name, parent, 4)
+        ShaderGroup.create(self, node, name, parent, 4)
         self.group.inputs.new("NodeSocketFloat", "Midlevel")
         self.group.inputs.new("NodeSocketFloat", "Scale")
         self.group.inputs.new("NodeSocketVector", "UV")
@@ -266,15 +266,15 @@ class DAZ_OT_LoadVectorDisp(DazOperator, LoadMaps, VectorDispAdder):
 # -------------------------------------------------------------
 
 
-class MixNormalTextureGroup(CyclesGroup):
+class MixNormalTextureGroup(ShaderGroup):
 
     def __init__(self):
-        CyclesGroup.__init__(self)
+        ShaderGroup.__init__(self)
         self.mat_group.insockets += ["Fac", "Color1", "Color2"]
         self.mat_group.outsockets += ["Color"]
 
     def create(self, node, name, parent):
-        CyclesGroup.create(self, node, name, parent, 8)
+        ShaderGroup.create(self, node, name, parent, 8)
         self.group.inputs.new("NodeSocketFloat", "Fac")
         self.group.inputs.new("NodeSocketColor", "Color1")
         self.group.inputs.new("NodeSocketColor", "Color2")

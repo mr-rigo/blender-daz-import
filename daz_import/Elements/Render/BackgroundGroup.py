@@ -1,7 +1,8 @@
-from daz_import.cgroup import CyclesGroup
+from daz_import.cgroup import ShaderGroup
 
 
-class BackgroundGroup(CyclesGroup):
+class BackgroundGroup(ShaderGroup):
+    
     def __init__(self):
         super().__init__()
         self.mat_group.insockets += ["Color"]
