@@ -120,14 +120,18 @@ class Light(Node):
 
     def postbuild(self, context, inst):
         super().postbuild(context, inst)
-        if self.twosided:
-            if inst.rna:
-                ob = inst.rna
-                BlenderStatic.activate(context, ob)
-                bpy.ops.object.duplicate_move()
-                nob = BlenderStatic.active_object(context)
-                nob.data = ob.data
-                nob.scale = -ob.scale
+        if not self.twosided or not inst.rna:
+            return
+
+        ob = inst.rna
+
+        BlenderStatic.activate(context, ob)
+        bpy.ops.object.duplicate_move()
+
+        nob = BlenderStatic.active_object(context)
+        nob.data = ob.data
+        nob.scale = -ob.scale
+
 
 # -------------------------------------------------------------
 #   LightInstance
@@ -136,13 +140,14 @@ class Light(Node):
 
 class LightInstance(Instance):
     def __init__(self, fileref, node, struct):
-        Instance.__init__(self, fileref, node, struct)
+        super().__init__(fileref, node, struct)
         self.material = CyclesLightMaterial(fileref, self)
         self.fluxFactor = 1
 
     def buildChannels(self, context):
-        Instance.buildChannels(self, context)
+        super().buildChannels(context)
         lamp = self.rna.data
+
         if self.channelsData.getValue(["Cast Shadows"], 0):
             lamp.cycles.cast_shadow = True
         else:
@@ -173,23 +178,19 @@ class LightInstance(Instance):
 class CyclesLightMaterial(CyclesMaterial):
 
     def __init__(self, fileref, inst):
-        CyclesMaterial.__init__(self, fileref)
+        super().__init__(fileref)
         self.name = inst.name
         self.channelsData.channels = inst.channelsData.channels
         self.instance = inst
 
     def guessColor(self):
-        return
+        ...
 
-    def build(self, context):
-        if self.dontBuild():
-            return
-        Material.build(self, context)
-        self.shader_object = LightTree(self)
-        self.shader_object.build()
+    def get_shader(self, _=None) -> CyclesShader:
+        return LightShader(self)
 
 
-class LightTree(CyclesShader):
+class LightShader(CyclesShader):
 
     def build(self):
         self.makeTree()
@@ -203,4 +204,4 @@ class LightTree(CyclesShader):
         self.links.new(emit.outputs[0], output.inputs["Surface"])
 
     def addTexco(self, slot):
-        return
+        ...
