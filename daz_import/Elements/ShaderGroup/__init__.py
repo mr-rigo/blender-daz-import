@@ -29,6 +29,12 @@ class ShaderGroup(CyclesShader):
     def out_sockets(self, *sockets: str):
         self.mat_group.outsockets += sockets
 
+    def input(self, a: str, b: str):
+        return self.group.inputs.new(a, b)
+
+    def output(self, a: str, b: str):
+        return self.group.outputs.new(a, b)
+
 # ---------------------------------------------------------------------
 #   Shell Group
 # ---------------------------------------------------------------------
@@ -40,24 +46,30 @@ class ShellGroup:
         self.group = None
         self.push = push
 
-        self.mat_group = MaterialGroup(self)        
+        self.mat_group = MaterialGroup(self)
         self.in_sockets("Influence", "Cycles", "Eevee", "UV", "Displacement")
         self.out_sockets("Cycles", "Eevee", "Displacement")
 
     def create(self, node, name, parent):
         self.mat_group.create(node, name, parent, 10)
 
-        self.group.inputs.new("NodeSocketFloat", "Influence")
-        self.group.inputs.new("NodeSocketShader", "Cycles")
-        self.group.inputs.new("NodeSocketShader", "Eevee")
-        self.group.inputs.new("NodeSocketVector", "UV")
-        self.group.inputs.new("NodeSocketFloat", "Displacement")
-        self.group.outputs.new("NodeSocketShader", "Cycles")
-        self.group.outputs.new("NodeSocketShader", "Eevee")
-        self.group.outputs.new("NodeSocketFloat", "Displacement")
+        self.input("NodeSocketFloat", "Influence")
+        self.input("NodeSocketShader", "Cycles")
+        self.input("NodeSocketShader", "Eevee")
+        self.input("NodeSocketVector", "UV")
+        self.input("NodeSocketFloat", "Displacement")
+        self.output("NodeSocketShader", "Cycles")
+        self.output("NodeSocketShader", "Eevee")
+        self.output("NodeSocketFloat", "Displacement")
 
     def in_sockets(self, *sockets: str):
         self.mat_group.insockets += sockets
+
+    def input(self, a: str, b: str):
+        return self.group.inputs.new(a, b)
+
+    def output(self, a: str, b: str):
+        return self.group.outputs.new(a, b)
 
     def out_sockets(self, *sockets: str):
         self.mat_group.outsockets += sockets
@@ -177,10 +189,10 @@ class FresnelShaderGroup(ShaderGroup):
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 4)
-        self.group.inputs.new("NodeSocketFloat", "IOR")
-        self.group.inputs.new("NodeSocketFloat", "Roughness")
-        self.group.inputs.new("NodeSocketVector", "Normal")
-        self.group.outputs.new("NodeSocketFloat", "Fac")
+        self.input("NodeSocketFloat", "IOR")
+        self.input("NodeSocketFloat", "Roughness")
+        self.input("NodeSocketVector", "Normal")
+        self.output("NodeSocketFloat", "Fac")
 
     def addNodes(self, args=None):
         geo = self.addNode("ShaderNodeNewGeometry", 0)
@@ -241,11 +253,11 @@ class MixShaderGroup(ShaderGroup):
     def create(self, node, name, parent, ncols):
         super().create(node, name, parent, ncols)
 
-        self.group.inputs.new("NodeSocketFloat", "Fac")
-        self.group.inputs.new("NodeSocketShader", "Cycles")
-        self.group.inputs.new("NodeSocketShader", "Eevee")
-        self.group.outputs.new("NodeSocketShader", "Cycles")
-        self.group.outputs.new("NodeSocketShader", "Eevee")
+        self.input("NodeSocketFloat", "Fac")
+        self.input("NodeSocketShader", "Cycles")
+        self.input("NodeSocketShader", "Eevee")
+        self.output("NodeSocketShader", "Cycles")
+        self.output("NodeSocketShader", "Eevee")
 
     def addNodes(self, args=None):
         self.mix1 = self.addNode("ShaderNodeMixShader", self.ncols-1)
@@ -276,10 +288,10 @@ class AddShaderGroup(ShaderGroup):
 
     def create(self, node, name, parent, ncols):
         super().create(node, name, parent, ncols)
-        self.group.inputs.new("NodeSocketShader", "Cycles")
-        self.group.inputs.new("NodeSocketShader", "Eevee")
-        self.group.outputs.new("NodeSocketShader", "Cycles")
-        self.group.outputs.new("NodeSocketShader", "Eevee")
+        self.input("NodeSocketShader", "Cycles")
+        self.input("NodeSocketShader", "Eevee")
+        self.output("NodeSocketShader", "Cycles")
+        self.output("NodeSocketShader", "Eevee")
 
     def addNodes(self, args=None):
         self.add1 = self.addNode("ShaderNodeAddShader", 2)
@@ -303,8 +315,8 @@ class EmissionShaderGroup(AddShaderGroup):
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 3)
-        self.group.inputs.new("NodeSocketColor", "Color")
-        self.group.inputs.new("NodeSocketFloat", "Strength")
+        self.input("NodeSocketColor", "Color")
+        self.input("NodeSocketFloat", "Strength")
 
     def addNodes(self, args=None):
         super().addNodes(args)
@@ -324,10 +336,10 @@ class OneSidedShaderGroup(ShaderGroup):
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 3)
-        self.group.inputs.new("NodeSocketShader", "Cycles")
-        self.group.inputs.new("NodeSocketShader", "Eevee")
-        self.group.outputs.new("NodeSocketShader", "Cycles")
-        self.group.outputs.new("NodeSocketShader", "Eevee")
+        self.input("NodeSocketShader", "Cycles")
+        self.input("NodeSocketShader", "Eevee")
+        self.output("NodeSocketShader", "Cycles")
+        self.output("NodeSocketShader", "Eevee")
 
     def addNodes(self, args=None):
         geo = self.addNode("ShaderNodeNewGeometry", 1)
@@ -356,9 +368,9 @@ class DiffuseShaderGroup(MixShaderGroup):
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 3)
-        self.group.inputs.new("NodeSocketColor", "Color")
-        self.group.inputs.new("NodeSocketFloat", "Roughness")
-        self.group.inputs.new("NodeSocketVector", "Normal")
+        self.input("NodeSocketColor", "Color")
+        self.input("NodeSocketFloat", "Roughness")
+        self.input("NodeSocketVector", "Normal")
 
     def addNodes(self, args=None):
         super().addNodes(args)
@@ -385,9 +397,9 @@ class GlossyShaderGroup(MixShaderGroup):
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 3)
-        self.group.inputs.new("NodeSocketColor", "Color")
-        self.group.inputs.new("NodeSocketFloat", "Roughness")
-        self.group.inputs.new("NodeSocketVector", "Normal")
+        self.input("NodeSocketColor", "Color")
+        self.input("NodeSocketFloat", "Roughness")
+        self.input("NodeSocketVector", "Normal")
 
     def addNodes(self, args=None):
         super().addNodes(args)
@@ -416,12 +428,12 @@ class TopCoatShaderGroup(MixShaderGroup):
     def create(self, node, name, parent):
         super().create(node, name, parent, 4)
 
-        self.group.inputs.new("NodeSocketColor", "Color")
-        self.group.inputs.new("NodeSocketFloat", "Roughness")
-        self.group.inputs.new("NodeSocketFloat", "Bump")
-        self.group.inputs.new("NodeSocketFloat", "Distance")
-        self.group.inputs.new("NodeSocketFloat", "Height")
-        self.group.inputs.new("NodeSocketVector", "Normal")
+        self.input("NodeSocketColor", "Color")
+        self.input("NodeSocketFloat", "Roughness")
+        self.input("NodeSocketFloat", "Bump")
+        self.input("NodeSocketFloat", "Distance")
+        self.input("NodeSocketFloat", "Height")
+        self.input("NodeSocketVector", "Normal")
 
     def addNodes(self, args=None):
         super().addNodes(args)
@@ -459,14 +471,14 @@ class RefractionShaderGroup(MixShaderGroup):
     def create(self, node, name, parent):
         super().create(node, name, parent, 5)
 
-        self.group.inputs.new("NodeSocketFloat", "Thin Wall")
-        self.group.inputs.new("NodeSocketColor", "Refraction Color")
-        self.group.inputs.new("NodeSocketFloat", "Refraction Roughness")
-        self.group.inputs.new("NodeSocketFloat", "Refraction IOR")
-        self.group.inputs.new("NodeSocketFloat", "Fresnel IOR")
-        self.group.inputs.new("NodeSocketColor", "Glossy Color")
-        self.group.inputs.new("NodeSocketFloat", "Glossy Roughness")
-        self.group.inputs.new("NodeSocketVector", "Normal")
+        self.input("NodeSocketFloat", "Thin Wall")
+        self.input("NodeSocketColor", "Refraction Color")
+        self.input("NodeSocketFloat", "Refraction Roughness")
+        self.input("NodeSocketFloat", "Refraction IOR")
+        self.input("NodeSocketFloat", "Fresnel IOR")
+        self.input("NodeSocketColor", "Glossy Color")
+        self.input("NodeSocketFloat", "Glossy Roughness")
+        self.input("NodeSocketVector", "Normal")
 
     def addNodes(self, args=None):
         super().addNodes(args)
@@ -568,7 +580,7 @@ class TransparentShaderGroup(MixShaderGroup):
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 3)
-        self.group.inputs.new("NodeSocketColor", "Color")
+        self.input("NodeSocketColor", "Color")
 
     def addNodes(self, args=None):
         super().addNodes(args)
@@ -595,13 +607,13 @@ class TranslucentShaderGroup(MixShaderGroup):
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 4)
-        self.group.inputs.new("NodeSocketColor", "Color")
-        self.group.inputs.new("NodeSocketFloat", "Gamma")
-        self.group.inputs.new("NodeSocketFloat", "Scale")
-        self.group.inputs.new("NodeSocketVector", "Radius")
-        self.group.inputs.new("NodeSocketFloat", "Cycles Mix Factor")
-        self.group.inputs.new("NodeSocketFloat", "Eevee Mix Factor")
-        self.group.inputs.new("NodeSocketVector", "Normal")
+        self.input("NodeSocketColor", "Color")
+        self.input("NodeSocketFloat", "Gamma")
+        self.input("NodeSocketFloat", "Scale")
+        self.input("NodeSocketVector", "Radius")
+        self.input("NodeSocketFloat", "Cycles Mix Factor")
+        self.input("NodeSocketFloat", "Eevee Mix Factor")
+        self.input("NodeSocketVector", "Normal")
 
     def addNodes(self, args=None):
         super().addNodes(args)
@@ -650,9 +662,9 @@ class MakeupShaderGroup(MixShaderGroup):
     def create(self, node, name, parent):
         super().create(node, name, parent, 3)
 
-        self.group.inputs.new("NodeSocketColor", "Color")
-        self.group.inputs.new("NodeSocketFloat", "Roughness")
-        self.group.inputs.new("NodeSocketVector", "Normal")
+        self.input("NodeSocketColor", "Color")
+        self.input("NodeSocketFloat", "Roughness")
+        self.input("NodeSocketVector", "Normal")
 
     def addNodes(self, args=None):
         super().addNodes(args)
@@ -679,9 +691,9 @@ class RayClipShaderGroup(ShaderGroup):
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 4)
-        self.group.inputs.new("NodeSocketShader", "Shader")
-        self.group.inputs.new("NodeSocketColor", "Color")
-        self.group.outputs.new("NodeSocketShader", "Shader")
+        self.input("NodeSocketShader", "Shader")
+        self.input("NodeSocketColor", "Color")
+        self.output("NodeSocketShader", "Shader")
 
     def addNodes(self, args=None):
         lpath = self.addNode("ShaderNodeLightPath", 1)
@@ -717,16 +729,16 @@ class DualLobeShaderGroup(ShaderGroup):
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 4)
-        self.group.inputs.new("NodeSocketFloat", "Fac")
-        self.group.inputs.new("NodeSocketShader", "Cycles")
-        self.group.inputs.new("NodeSocketShader", "Eevee")
-        self.group.inputs.new("NodeSocketFloat", "Weight")
-        self.group.inputs.new("NodeSocketFloat", "IOR")
-        self.group.inputs.new("NodeSocketFloat", "Roughness 1")
-        self.group.inputs.new("NodeSocketFloat", "Roughness 2")
-        self.group.inputs.new("NodeSocketVector", "Normal")
-        self.group.outputs.new("NodeSocketShader", "Cycles")
-        self.group.outputs.new("NodeSocketShader", "Eevee")
+        self.input("NodeSocketFloat", "Fac")
+        self.input("NodeSocketShader", "Cycles")
+        self.input("NodeSocketShader", "Eevee")
+        self.input("NodeSocketFloat", "Weight")
+        self.input("NodeSocketFloat", "IOR")
+        self.input("NodeSocketFloat", "Roughness 1")
+        self.input("NodeSocketFloat", "Roughness 2")
+        self.input("NodeSocketVector", "Normal")
+        self.output("NodeSocketShader", "Cycles")
+        self.output("NodeSocketShader", "Eevee")
 
     def addNodes(self, args=None):
         fresnel1 = self.addFresnel(True, "Roughness 1")
@@ -809,12 +821,12 @@ class VolumeShaderGroup(ShaderGroup):
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 3)
-        self.group.inputs.new("NodeSocketColor", "Absorbtion Color")
-        self.group.inputs.new("NodeSocketFloat", "Absorbtion Density")
-        self.group.inputs.new("NodeSocketColor", "Scatter Color")
-        self.group.inputs.new("NodeSocketFloat", "Scatter Density")
-        self.group.inputs.new("NodeSocketFloat", "Scatter Anisotropy")
-        self.group.outputs.new("NodeSocketShader", "Volume")
+        self.input("NodeSocketColor", "Absorbtion Color")
+        self.input("NodeSocketFloat", "Absorbtion Density")
+        self.input("NodeSocketColor", "Scatter Color")
+        self.input("NodeSocketFloat", "Scatter Density")
+        self.input("NodeSocketFloat", "Scatter Anisotropy")
+        self.output("NodeSocketShader", "Volume")
 
     def addNodes(self, _=None):
         absorb = self.addNode("ShaderNodeVolumeAbsorption", 1)
@@ -853,15 +865,15 @@ class NormalShaderGroup(ShaderGroup):
     def create(self, node, name, parent):
         super().create(node, name, parent, 8)
 
-        strength = self.group.inputs.new("NodeSocketFloat", "Strength")
+        strength = self.input("NodeSocketFloat", "Strength")
         strength.default_value = 1.0
         strength.min_value = 0.0
         strength.max_value = 1.0
 
-        color = self.group.inputs.new("NodeSocketColor", "Color")
+        color = self.input("NodeSocketColor", "Color")
         color.default_value = ((0.5, 0.5, 1.0, 1.0))
 
-        self.group.outputs.new("NodeSocketVector", "Normal")
+        self.output("NodeSocketVector", "Normal")
 
     def addNodes(self, args):
         # Generate TBN from Bump Node
@@ -992,12 +1004,12 @@ class DisplacementShaderGroup(ShaderGroup):
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 4)
-        self.group.inputs.new("NodeSocketFloat", "Texture")
-        self.group.inputs.new("NodeSocketFloat", "Strength")
-        self.group.inputs.new("NodeSocketFloat", "Max")
-        self.group.inputs.new("NodeSocketFloat", "Min")
-        self.group.inputs.new("NodeSocketVector", "Normal")
-        self.group.outputs.new("NodeSocketVector", "Displacement")
+        self.input("NodeSocketFloat", "Texture")
+        self.input("NodeSocketFloat", "Strength")
+        self.input("NodeSocketFloat", "Max")
+        self.input("NodeSocketFloat", "Min")
+        self.input("NodeSocketVector", "Normal")
+        self.output("NodeSocketVector", "Displacement")
 
     def addNodes(self, args=None):
         bw = self.addNode("ShaderNodeRGBToBW", 1)
@@ -1040,11 +1052,11 @@ class DecalShaderGroup(ShaderGroup):
 
     def create(self, node, name, parent):
         super().create(node, name, parent, 5)
-        self.group.inputs.new("NodeSocketColor", "Color")
-        self.group.inputs.new("NodeSocketFloat", "Influence")
-        self.group.outputs.new("NodeSocketColor", "Color")
-        self.group.outputs.new("NodeSocketFloat", "Alpha")
-        self.group.outputs.new("NodeSocketColor", "Combined")
+        self.input("NodeSocketColor", "Color")
+        self.input("NodeSocketFloat", "Influence")
+        self.output("NodeSocketColor", "Color")
+        self.output("NodeSocketFloat", "Alpha")
+        self.output("NodeSocketColor", "Combined")
 
     def addNodes(self, args):
         empty, img = args
@@ -1093,10 +1105,10 @@ class LieShaderGroup(ShaderGroup):
     def create(self, node, name, parent):
         super().create(node, name, parent, 6)
 
-        self.group.inputs.new("NodeSocketVector", "Vector")
+        self.input("NodeSocketVector", "Vector")
         self.texco = self.inputs.outputs[0]
-        self.group.inputs.new("NodeSocketFloat", "Alpha")
-        self.group.outputs.new("NodeSocketColor", "Color")
+        self.input("NodeSocketFloat", "Alpha")
+        self.output("NodeSocketColor", "Color")
 
     def addTextureNodes(self, assets, maps, colorSpace):
         texnodes = []

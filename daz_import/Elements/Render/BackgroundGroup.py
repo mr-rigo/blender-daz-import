@@ -11,9 +11,9 @@ class BackgroundGroup(ShaderGroup):
     def create(self, node, name, parent):
         super().create(node, name, parent, 2)
 
-        self.group.inputs.new("NodeSocketColor", "Color")
-        self.group.outputs.new("NodeSocketFloat", "Fac")
-        self.group.outputs.new("NodeSocketColor", "Color")
+        self.input("NodeSocketColor", "Color")
+        self.output("NodeSocketFloat", "Fac")
+        self.output("NodeSocketColor", "Color")
 
     def addNodes(self, _=None):
         lightpath = self.addNode("ShaderNodeLightPath", 1)

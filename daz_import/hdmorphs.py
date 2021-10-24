@@ -127,10 +127,10 @@ class DispGroup(ShaderGroup):
 
     def create(self, node, name, parent):
         ShaderGroup.create(self, node, name, parent, 4)
-        self.group.inputs.new("NodeSocketFloat", "Midlevel")
-        self.group.inputs.new("NodeSocketFloat", "Scale")
-        self.group.inputs.new("NodeSocketVector", "UV")
-        self.group.outputs.new("NodeSocketVector", "Displacement")
+        self.input("NodeSocketFloat", "Midlevel")
+        self.input("NodeSocketFloat", "Scale")
+        self.input("NodeSocketVector", "UV")
+        self.output("NodeSocketVector", "Displacement")
 
     def addNodes(self, args):
         from daz_import.driver import makePropDriver
@@ -275,10 +275,10 @@ class MixNormalTextureGroup(ShaderGroup):
 
     def create(self, node, name, parent):
         ShaderGroup.create(self, node, name, parent, 8)
-        self.group.inputs.new("NodeSocketFloat", "Fac")
-        self.group.inputs.new("NodeSocketColor", "Color1")
-        self.group.inputs.new("NodeSocketColor", "Color2")
-        self.group.outputs.new("NodeSocketColor", "Color")
+        self.input("NodeSocketFloat", "Fac")
+        self.input("NodeSocketColor", "Color1")
+        self.input("NodeSocketColor", "Color2")
+        self.output("NodeSocketColor", "Color")
 
     def addNodes(self, args):
         mix = self.addNode("ShaderNodeMixRGB", 1)

@@ -215,10 +215,10 @@ class FadeGroupShader(HairShader):
     def create(self, node, name, parent):
         HairShader.__init__(self, parent.material, ColorStatic.BLACK)
         self.mat_group.create(node, name, parent, 4)
-        self.group.inputs.new("NodeSocketShader", "Shader")
-        self.group.inputs.new("NodeSocketFloat", "Intercept")
-        self.group.inputs.new("NodeSocketFloat", "Random")
-        self.group.outputs.new("NodeSocketShader", "Shader")
+        self.input("NodeSocketShader", "Shader")
+        self.input("NodeSocketFloat", "Intercept")
+        self.input("NodeSocketFloat", "Random")
+        self.output("NodeSocketShader", "Shader")
 
     def addNodes(self, args=None):
         self.column = 3
