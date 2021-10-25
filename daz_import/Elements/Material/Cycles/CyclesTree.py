@@ -34,10 +34,7 @@ class CyclesShader(CyclesStatic):
         self.column = 4
 
         self.texnodes: Dict[str, BlenderMaterial] = {}
-
-        # self.nodes: List[ShaderNode] = []
-        self.links: List[NodeLink] = None
-
+        
         self.group = None
         self.groups = {}
         self.liegroups = []
@@ -1784,13 +1781,10 @@ class CyclesShader(CyclesStatic):
     def set_material(self, mat: BlenderMaterial):
         mat.use_nodes = True
         self.shader_graph.init(mat)
-        # self.nodes = mat.node_tree.nodes
-        self.links = mat.node_tree.links
+        
 
     def set_material_object(self, obj):
         self.shader_graph.init(obj, False)
-        # self.nodes = obj.nodes
-        self.links = obj.links
-
+        
     def pruneNodeTree(self):
         return super().pruneNodeTree(self.shader_graph)

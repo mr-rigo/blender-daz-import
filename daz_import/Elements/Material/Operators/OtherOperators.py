@@ -436,8 +436,8 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, LaunchEditor, IsMesh)
         from daz_import.Elements.Material.Cycles import CyclesShader
 
         shader: CyclesShader
-
-        for link in shader.links.values():
+        
+        for link in shader.shader_graph.links.values():
             if link.to_node and link.to_node.type == nodeType:
                 if link.to_socket == link.to_node.inputs[slot]:
                     return link.from_socket, link.to_socket

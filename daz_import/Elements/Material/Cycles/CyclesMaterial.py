@@ -174,8 +174,8 @@ class CyclesMaterial(Material):
         area *= 1e-4/(Settings.scale_*Settings.scale_)
         
         for socket in self.geoemit:
-            socket.default_value /= area
-            for link in self.shader_object.links:
+            socket.default_value /= area            
+            for link in self.shader_object.shader_graph.links:
                 if link.to_socket != socket:
                     continue
                 node = link.from_node

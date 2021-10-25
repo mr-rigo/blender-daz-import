@@ -12,8 +12,11 @@ class ShaderNodeAbstract:
             raise AttributeError('Unknown shader alias')
         self.inner_node = self.graph.create_by_key(self.alias)
 
+        self.inputs = self.inner_node.inputs
+        self.outputs = self.inner_node.outputs
 
-class ShaderProperyInput:
+
+class SlotInput:
     def __init__(self,  node, key: str) -> None:
         self.node: ShaderNodeAbstract = node
         self.key = key
@@ -34,7 +37,7 @@ class ShaderProperyInput:
             print('- Error set default value shader node', self.key, prop)
 
 
-class ShaderProperyOutput(ShaderProperyInput):
+class SlotOutput(SlotInput):
     def inner(self) -> NodeSocket:
         return self.node.inner_node.outputs.get(self.key)
 
@@ -44,7 +47,7 @@ class ShaderOutput(ShaderNodeAbstract):
 
     def __init__(self, graph):
         super().__init__(graph)
-        self.surface = ShaderProperyInput(self, 'Surface')
+        self.surface = SlotInput(self, 'Surface')
 
 
 class BSDFPrincipled(ShaderNodeAbstract):
@@ -52,9 +55,9 @@ class BSDFPrincipled(ShaderNodeAbstract):
 
     def __init__(self, graph):
         super().__init__(graph)
-        self.output = ShaderProperyOutput(self, 'BSDF')
-        self.diffuse = ShaderProperyInput(self, 'Base Color')
-        self.specular = ShaderProperyInput(self, 'Specular')
+        self.output = SlotOutput(self, 'BSDF')
+        self.diffuse = SlotInput(self, 'Base Color')
+        self.specular = SlotInput(self, 'Specular')
 
 
 class DiffuseShader(ShaderNodeAbstract):
@@ -62,10 +65,10 @@ class DiffuseShader(ShaderNodeAbstract):
 
     def __init__(self, graph):
         super().__init__(graph)
-        self.output = ShaderProperyOutput(self, 'BSDF')
-        self.diffuse = ShaderProperyInput(self, 'Color')
-        self.roughness = ShaderProperyInput(self, 1)
-        self.normal = ShaderProperyInput(self, 'Normal')
+        self.output = SlotOutput(self, 'BSDF')
+        self.diffuse = SlotInput(self, 'Color')
+        self.roughness = SlotInput(self, 1)
+        self.normal = SlotInput(self, 'Normal')
 
 
 class EmissionShader(ShaderNodeAbstract):
@@ -73,10 +76,10 @@ class EmissionShader(ShaderNodeAbstract):
 
     def __init__(self, graph):
         super().__init__(graph)
-        self.input = ShaderProperyInput(self, 'Color')
-        self.emisssion = ShaderProperyInput(self, 'Color')
-        self.output = ShaderProperyOutput(self, 'Emission')
-        self.power = ShaderProperyInput(self, 1)
+        self.input = SlotInput(self, 'Color')
+        self.emisssion = SlotInput(self, 'Color')
+        self.output = SlotOutput(self, 'Emission')
+        self.power = SlotInput(self, 1)
 
 
 class ShaderGraph:
@@ -85,8 +88,7 @@ class ShaderGraph:
         self.nodes: Nodes = None
         self.links: NodeLinks = None
         self.__output_shader = None
-        if material:
-            self.init(material)
+        self.init(material)
 
     def use_nodes(self, value=True):
         if self.material:
@@ -96,10 +98,10 @@ class ShaderGraph:
         return ShaderNodeAbstract(self)
 
     def connect(self, a, b):
-        if isinstance(a, ShaderProperyInput):
+        if isinstance(a, SlotInput):
             a = a.inner()
 
-        if isinstance(b, ShaderProperyInput):
+        if isinstance(b, SlotInput):
             b = b.inner()
 
         self.links.new(a, b)
