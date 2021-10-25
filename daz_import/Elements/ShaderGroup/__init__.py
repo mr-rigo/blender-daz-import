@@ -90,7 +90,7 @@ class ShellGroup:
         mult.operation = 'MULTIPLY'
 
         self.link(self.inputs.outputs["Influence"], mult.inputs[0])
-        self.linkScalar(tex, mult, alpha, 1)
+        self.link_scalar(tex, mult, alpha, 1)
 
         transp = self.blacken()
 

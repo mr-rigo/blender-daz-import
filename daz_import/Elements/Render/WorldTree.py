@@ -70,7 +70,7 @@ class WorldShader(CyclesShader):
 
         envnode = self.add_node("ShaderNodeBackground")
         envnode.inputs["Strength"].default_value = strength
-        self.linkColor(tex, envnode, ColorStatic.WHITE)
+        self.link_color(tex, envnode, ColorStatic.WHITE)
         socket = envnode.outputs["Background"]
         return envnode, socket
 
@@ -104,7 +104,7 @@ class WorldShader(CyclesShader):
         from .BackgroundGroup import BackgroundGroup
 
         bgnode = self.add_group(BackgroundGroup, "DAZ Background")
-        self.linkColor(tex, bgnode, background)
+        self.link_color(tex, bgnode, background)
         bgnode.inputs["Color"].default_value[0:3] = background
         socket = bgnode.outputs["Color"]
         return bgnode, socket

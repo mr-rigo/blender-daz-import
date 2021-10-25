@@ -90,7 +90,7 @@ class PBRShader(CyclesShader):
         if not Settings.useEmission:
             return
         elif "Emission" in self.pbr.inputs.keys():
-            color = self.getColor("getChannelEmissionColor", ColorStatic.BLACK)
+            color = self.get_color("getChannelEmissionColor", ColorStatic.BLACK)
             if not ColorStatic.isBlack(color):
                 self.addEmitColor(self.pbr, "Emission")
         else:
@@ -98,20 +98,20 @@ class PBRShader(CyclesShader):
             self.postPBR = True
 
     def buildPBRNode(self):
-        if self.isEnabled("Diffuse"):
+        if self.is_enabled("Diffuse"):
             color, tex = self.getDiffuseColor()
             self.diffuseColor = color
             self.diffuseTex = tex
-            self.linkColor(tex, self.pbr, color, "Base Color")
+            self.link_color(tex, self.pbr, color, "Base Color")
         else:
             self.diffuseColor = ColorStatic.WHITE
             self.diffuseTex = None
 
         # Metallic Weight
-        if self.isEnabled("Metallicity"):
+        if self.is_enabled("Metallicity"):
             metallicity, tex = self.getColorTex(
                 ["Metallic Weight"], "NONE", 0.0)
-            self.linkScalar(tex, self.pbr, metallicity, "Metallic")
+            self.link_scalar(tex, self.pbr, metallicity, "Metallic")
         else:
             metallicity = 0
 
@@ -123,16 +123,16 @@ class PBRShader(CyclesShader):
         # Anisotropic
         anisotropy, tex = self.getColorTex(["Glossy Anisotropy"], "NONE", 0)
         if anisotropy > 0:
-            self.linkScalar(tex, self.pbr, anisotropy, "Anisotropic")
+            self.link_scalar(tex, self.pbr, anisotropy, "Anisotropic")
             anirot, tex = self.getColorTex(
                 ["Glossy Anisotropy Rotations"], "NONE", 0)
             value = 0.75 - anirot
-            self.linkScalar(tex, self.pbr, value, "Anisotropic Rotation")
+            self.link_scalar(tex, self.pbr, value, "Anisotropic Rotation")
 
         # Roughness
         channel, invert, value, roughness = self.getGlossyRoughness()
         roughness *= (1 + anisotropy)
-        self.addSlot(channel, self.pbr, "Roughness", roughness, value, invert)
+        self.add_slot(channel, self.pbr, "Roughness", roughness, value, invert)
 
         # Specular
         strength, strtex = self.getColorTex(
@@ -194,15 +194,15 @@ class PBRShader(CyclesShader):
                 self.link(tex.outputs[0], self.pbr.inputs["Clearcoat"])
 
         rough, tex = self.getColorTex(["Top Coat Roughness"], "NONE", 1.45)
-        self.linkScalar(tex, self.pbr, rough, "Clearcoat Roughness")
+        self.link_scalar(tex, self.pbr, rough, "Clearcoat Roughness")
 
         # Sheen
-        if self.isEnabled("Velvet"):
+        if self.is_enabled("Velvet"):
             velvet, tex = self.getColorTex(["Velvet Strength"], "NONE", 0.0)
-            self.linkScalar(tex, self.pbr, velvet, "Sheen")
+            self.link_scalar(tex, self.pbr, velvet, "Sheen")
 
     def buildSSS(self):
-        if not self.isEnabled("Subsurface"):
+        if not self.is_enabled("Subsurface"):
             return
         if not self.checkTranslucency():
             return
@@ -220,11 +220,11 @@ class PBRShader(CyclesShader):
 
         ssscolor, ssstex, sssmode = self.getSSSColor()
         radius, radtex = self.getSSSRadius(color, ssscolor, ssstex, sssmode)
-        self.linkColor(coltex, gamma, color, "Color")
+        self.link_color(coltex, gamma, color, "Color")
         self.pbr.subsurface_method = Settings.sssMethod
         self.link(gamma.outputs[0], self.pbr.inputs["Subsurface Color"])
-        self.linkScalar(wttex, self.pbr, wt, "Subsurface")
-        self.linkColor(radtex, self.pbr, radius, "Subsurface Radius")
+        self.link_scalar(wttex, self.pbr, wt, "Subsurface")
+        self.link_color(radtex, self.pbr, radius, "Subsurface Radius")
         self.endSSS()
 
     def getRefractionWeight(self):
@@ -269,7 +269,7 @@ class PBRShader(CyclesShader):
                 self.column += 1
                 clip = self.add_group(RayClipShaderGroup, "DAZ Ray Clip")
                 self.link(pbr.outputs[0], clip.inputs["Shader"])
-                self.linkColor(coltex, clip, color, "Color")
+                self.link_color(coltex, clip, color, "Color")
                 self.cycles = self.eevee = clip
             else:
                 clip = pbr
@@ -297,7 +297,7 @@ class PBRShader(CyclesShader):
                 "getChannelGlossyLayeredWeight", "NONE", 1.0, False)
             clearcoat = (ior-1)*10*strength
             self.removeLink(pbr, "Clearcoat")
-            self.linkScalar(strtex, pbr, clearcoat, "Clearcoat")
+            self.link_scalar(strtex, pbr, clearcoat, "Clearcoat")
             self.replaceSlot(pbr, "Clearcoat Roughness", 0)
 
         else:
@@ -316,13 +316,13 @@ class PBRShader(CyclesShader):
             self.replaceSlot(pbr, "Metallic", 0)
             self.replaceSlot(pbr, "Specular", 0.5)
             self.removeLink(pbr, "IOR")
-            self.linkScalar(iortex, pbr, ior, "IOR")
+            self.link_scalar(iortex, pbr, ior, "IOR")
             self.removeLink(pbr, "Roughness")
             self.setRoughness(pbr, "Roughness", roughness,
                               roughtex, square=False)
 
         self.removeLink(pbr, "Base Color")
-        self.linkColor(coltex, pbr, color, "Base Color")
+        self.link_color(coltex, pbr, color, "Base Color")
         self.replaceSlot(pbr, "Subsurface", 0)
         self.removeLink(pbr, "Subsurface Color")
         pbr.inputs["Subsurface Color"].default_value[0:3] = ColorStatic.WHITE

@@ -259,7 +259,7 @@ class Material(Asset):
         return self.channelsData.get_channel("diffuse", "Diffuse Color")
 
     def getDiffuse(self):
-        return self.getColor("getChannelDiffuse", ColorStatic.BLACK)
+        return self.get_color("getChannelDiffuse", ColorStatic.BLACK)
 
     def getChannelDiffuseStrength(self):
         return self.channelsData.getChannel(["diffuse_strength", "Diffuse Strength"])
@@ -373,7 +373,7 @@ class Material(Asset):
     def getChannelVerticalOffset(self):
         return self.channelsData.getChannel(["v_offset", "Vertical Offset"])
 
-    def getColor(self, attr, default):
+    def get_color(self, attr, default):
         return self.getChannelColor(self.channelsData.getChannel(attr), default)
 
     def getTexChannel(self, channels):
