@@ -154,7 +154,7 @@ class DispGroup(ShaderGroup):
                 last = add
         if last:
             self.link(last.outputs[0],
-                           self.outputs.inputs["Displacement"])
+                      self.outputs.inputs["Displacement"])
 
 
 class ScalarDispGroup(DispGroup):
@@ -169,7 +169,8 @@ class ScalarDispGroup(DispGroup):
 
 class VectorDispGroup(DispGroup):
     def addDispNode(self, sname, tex):
-        disp = self.add_node("ShaderNodeVectorDisplacement", col=2, label=sname)
+        disp = self.add_node(
+            "ShaderNodeVectorDisplacement", col=2, label=sname)
         self.link(tex.outputs["Color"], disp.inputs["Vector"])
         return disp
 
@@ -199,7 +200,7 @@ class DispAdder:
         from daz_import.Elements.Material.Cycles import \
             CyclesStatic, CyclesShader
 
-        shader = CyclesShader.create_shader(mat)
+        shader = CyclesShader(None, mat)
 
         texco = shader.find_texco(5)
 
@@ -211,7 +212,7 @@ class DispAdder:
 
         for node in shader.find_nodes("OUTPUT_MATERIAL"):
             shader.link(disp.outputs["Displacement"],
-                             node.inputs["Displacement"])
+                        node.inputs["Displacement"])
         if self.usePrune:
             CyclesStatic.pruneNodeTree(shader.shader_graph)
 
@@ -402,7 +403,7 @@ class NormalAdder:
         from daz_import.Elements.Material.Cycles import  \
             YSIZE, CyclesStatic, CyclesShader
 
-        shader = CyclesShader.create_shader(mat)
+        shader = CyclesShader(None, mat)
 
         texco = shader.find_texco(1)
         shader.ycoords[-1] = shader.ycoords[0] = YSIZE*(2-row)
@@ -419,11 +420,11 @@ class NormalAdder:
                 socket = links[0].from_socket
 
         bump = shader.findNode("BUMP")
-        
+
         if bump:
             shader.link(normal.outputs["Normal"], bump.inputs["Normal"])
         else:
-            for node in shader.shader_graph.nodes:                
+            for node in shader.shader_graph.nodes:
                 if "Normal" in node.inputs.keys():
                     shader.link(
                         normal.outputs["Normal"], node.inputs["Normal"])
@@ -436,7 +437,7 @@ class NormalAdder:
             shader.link(texco.outputs["UV"], tex.inputs["Vector"])
 
             mix = shader.add_group(MixNormalTextureGroup,
-                                  "DAZ Mix Normal Texture", col=0, force=True)
+                                   "DAZ Mix Normal Texture", col=0, force=True)
             mix.inputs["Fac"].default_value = 1
             mix.inputs["Color1"].default_value = (0.5, 0.5, 1, 1)
             if socket:
@@ -446,7 +447,7 @@ class NormalAdder:
                 makePropDriver(
                     PropsStatic.ref(prop), mix.inputs["Fac"], "default_value", amt, "x")
             socket = mix.outputs["Color"]
-        
+
         if socket:
             shader.link(socket, normal.inputs["Color"])
         else:
@@ -706,18 +707,22 @@ class DAZ_OT_BakeMaps(DazPropsOperator, Baker):
         ob.data.materials.append(mat)
         ob.active_material = mat
         mat.use_nodes = True
+
         tree = mat.node_tree
         tree.nodes.clear()
         texco = tree.nodes.new(type="ShaderNodeTexCoord")
         texco.location = (0, 0)
+
         node = tree.nodes.new(type="ShaderNodeTexImage")
         node.location = (200, 0)
         node.image = img
         node.interpolation = Settings.imageInterpolation
         node.extension = 'CLIP'
         node.select = True
+        
         tree.nodes.active = node
         tree.link(texco.outputs["UV"], node.inputs["Vector"])
+        
         return mat
 
     def selectFaces(self, ob, fnums, tile):

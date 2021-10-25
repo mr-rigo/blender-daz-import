@@ -27,7 +27,6 @@ class Material(Asset):
 
         self.scene = None
         self.shader_key = 'UBER_IRAY'
-        self.channelsData.channels = OrderedDict()
         self.textures = OrderedDict()
 
         self.groups = []
@@ -451,7 +450,7 @@ class Material(Asset):
 
             textures.append(tex)
             maps.append(map_)
-        
+
         return textures, maps
 
     def hasTextures(self, channel) -> bool:

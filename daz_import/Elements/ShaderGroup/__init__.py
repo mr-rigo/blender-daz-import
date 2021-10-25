@@ -84,7 +84,8 @@ class ShellGroup:
         self.texco = self.inputs.outputs["UV"]
         self._build_layer(uvname)
 
-        alpha, tex = self._get_color_tex("getChannelCutoutOpacity", "NONE", 1.0)
+        alpha, tex = self._get_color_tex(
+            "getChannelCutoutOpacity", "NONE", 1.0)
 
         mult = self.add_node("ShaderNodeMath", 6)
         mult.operation = 'MULTIPLY'
@@ -130,7 +131,7 @@ class RefractiveShellGroup(ShellGroup):
     def blacken(self):
         transp = self.add_node("ShaderNodeBsdfTransparent", 7)
         transp.inputs[0].default_value[0:3] = ColorStatic.BLACK
-                
+
         for node in self.shader_graph.nodes:
             if node.type == 'GROUP' and "Refraction Color" in node.inputs.keys():
                 node.inputs["Refraction Color"].default_value[0:3] = ColorStatic.BLACK
@@ -1276,8 +1277,7 @@ class DAZ_OT_MakeShaderGroups(DazPropsOperator):
 
         cmat = CyclesMaterial("")
 
-        shader = CyclesShader(cmat)
-        shader.set_material(mat)
+        shader = CyclesShader(cmat, mat)
         shader.column = 0
 
         for key, value in self.groups.items():

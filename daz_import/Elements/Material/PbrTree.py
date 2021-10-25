@@ -13,7 +13,8 @@ class PBRShader(CyclesShader):
         super().__init__(*args)
         self.pbr = None
         self.type = 'PBR'
-
+        self.postPBR = None
+        
     def __repr__(self):
         return ("<Pbr %s %s %s>" % (self.material.rna, self.shader_graph.nodes, self.links))
 
@@ -57,7 +58,7 @@ class PBRShader(CyclesShader):
             else:
                 self.buildPBRRefraction()
         else:
-            self.buildEmission()
+            self._build_emission()
 
     def linkPBRNormal(self, pbr):
         if self.bump:
@@ -86,7 +87,8 @@ class PBRShader(CyclesShader):
     def buildVolume(self):
         ...
 
-    def buildEmission(self):
+    def _build_emission(self):
+        
         if not Settings.useEmission:
             return
         elif "Emission" in self.pbr.inputs.keys():
@@ -94,18 +96,18 @@ class PBRShader(CyclesShader):
             if not ColorStatic.isBlack(color):
                 self.addEmitColor(self.pbr, "Emission")
         else:
-            CyclesShader.buildEmission(self)
+            super()._build_emission()
             self.postPBR = True
 
     def buildPBRNode(self):
         if self.is_enabled("Diffuse"):
             color, tex = self._get_diffuse_color()
             self.diffuseColor = color
-            self.diffuseTex = tex
+            self._diffuse_tex = tex
             self.link_color(tex, self.pbr, color, "Base Color")
         else:
             self.diffuseColor = ColorStatic.WHITE
-            self.diffuseTex = None
+            self._diffuse_tex = None
 
         # Metallic Weight
         if self.is_enabled("Metallicity"):
@@ -204,12 +206,12 @@ class PBRShader(CyclesShader):
     def buildSSS(self):
         if not self.is_enabled("Subsurface"):
             return
-        if not self.checkTranslucency():
+        if not self._check_translucency():
             return
         wt, wttex = self._get_color_tex("getChannelTranslucencyWeight", "NONE", 0)
         if wt == 0:
             return
-        color, coltex = self.getTranslucentColor()
+        color, coltex = self._get_translucent_color()
 
         if ColorStatic.isBlack(color):
             return

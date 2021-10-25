@@ -253,8 +253,7 @@ class FadeGroupShader(HairShader):
 
 class FadeHairShader(HairShader):
 
-    def build(self, material):
-
+    def build(self, material):        
         if material.node_tree is None:
             print("Material %s has no nodes" % material.name)
             return

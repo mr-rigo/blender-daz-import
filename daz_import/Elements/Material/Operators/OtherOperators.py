@@ -401,30 +401,35 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, LaunchEditor, IsMesh)
         ob = context.object
 
         mat = ob.data.materials[ob.active_material_index]
-
-        tree = CyclesShader.create_shader(mat)
+        
+        shader = CyclesShader(None, mat)
         coll = BlenderStatic.collection(ob)
 
         empty = bpy.data.objects.new(fname, None)
         coll.objects.link(empty)
 
         for item in self.shows:
-            if item.show:
-                nodeType, slot, cname = self.channels[item.name]
-                fromSocket, toSocket = self.getFromToSockets(
-                    tree, nodeType, slot)
-                if toSocket is None:
-                    print("Channel %s not found" % item.name)
-                    continue
-                nname = fname + "_" + cname
-                node = tree.add_group(DecalShaderGroup, nname, col=3, args=[
-                                     empty, img], force=True)
-                node.inputs["Influence"].default_value = 1.0
-                if fromSocket:
-                    tree.link(fromSocket, node.inputs["Color"])
-                    tree.link(node.outputs["Combined"], toSocket)
-                else:
-                    tree.link(node.outputs["Color"], toSocket)
+            if not item.show:
+                continue
+            
+            nodeType, slot, cname = self.channels[item.name]
+            fromSocket, toSocket = self.getFromToSockets(
+                shader, nodeType, slot)
+
+            if toSocket is None:
+                print("Channel %s not found" % item.name)
+                continue
+
+            nname = fname + "_" + cname
+            node = shader.add_group(DecalShaderGroup, nname, col=3, args=[
+                                    empty, img], force=True)
+            node.inputs["Influence"].default_value = 1.0
+            
+            if fromSocket:
+                shader.link(fromSocket, node.inputs["Color"])
+                shader.link(node.outputs["Combined"], toSocket)                
+            else:
+                shader.link(node.outputs["Color"], toSocket)
 
     @staticmethod
     def getFromToSockets(shader, nodeType, slot):

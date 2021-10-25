@@ -5,6 +5,7 @@ from daz_import.Lib.Settings import Settings
 from daz_import.Lib.VectorStatic import VectorStatic
 from mathutils import Vector
 from .Asset import Asset
+from collections import OrderedDict
 
 # -------------------------------------------------------------
 #   Channels class
@@ -14,7 +15,7 @@ from .Asset import Asset
 class Channels:
     def __init__(self, asset: Asset):
         self.__asset: Asset = asset
-        self.channels = {}
+        self.channels = OrderedDict()
         self.extra = []
 
     def parse(self, data: Dict[str, Any]):

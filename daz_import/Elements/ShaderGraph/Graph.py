@@ -126,7 +126,7 @@ class ShaderGraph:
     def init(self, obj, matrial=True):
         if not obj:
             return
-            
+
         if matrial:
             obj: Material
             obj.use_nodes = True
@@ -137,3 +137,6 @@ class ShaderGraph:
         self.links = obj.links
         # self.nodes = self.material.node_tree.nodes
         # self.links = self.material.node_tree.links
+
+    def set_active_node(self, node: ShaderNode):
+        self.nodes.active = node

@@ -8,7 +8,7 @@ import bpy
 from bpy.types import Material as BlenderMaterial
 from bpy.types import ShaderNode, NodeLink, \
     ShaderNodeTexImage, ShaderNodeBump, NodeSocketVector,\
-    ShaderNodeGroup, ShaderNodeTexImage, ShaderNodeMapping, ShaderNodeGroup, ShaderNodeMixRGB
+    ShaderNodeGroup, ShaderNodeTexImage, ShaderNodeMapping, ShaderNodeGroup, ShaderNodeMixRGB, ShaderNodeUVMap
 
 
 from daz_import.Elements.Color import ColorStatic
@@ -24,7 +24,7 @@ from daz_import.Elements.ShaderGraph import ShaderGraph, EmissionShader, Diffuse
 class CyclesShader(CyclesStatic):
     type = 'CYCLES'
 
-    def __init__(self, material: Material):
+    def __init__(self, material: Material, b_mat: BlenderMaterial = None):
         self.shader_graph = ShaderGraph()
         self.material: Material = material
         self.easy_shader = False
@@ -42,7 +42,7 @@ class CyclesShader(CyclesStatic):
         self.groups = {}
         self.liegroups = []
 
-        self.diffuseTex: ShaderNodeTexImage = None
+        self._diffuse_tex: ShaderNodeTexImage = None
         self.fresnel = None
         self.normal = None
 
@@ -58,6 +58,9 @@ class CyclesShader(CyclesStatic):
         self.volume: ShaderNodeGroup = None
         self.useCutout = False
         self.useTranslucency = False
+
+        if b_mat:
+            self.set_material(b_mat)
 
     def link(self, a, b):
         return self.links.new(a, b)
@@ -100,19 +103,22 @@ class CyclesShader(CyclesStatic):
             self._add_uv_node(key, key)
 
         return self.texcos.get(key)
-
+    
+    # 7
     def cycles_socket(self):
         if out := self.cycles.outputs.get("Cycles"):
             return out
         else:
             return self.cycles.outputs[0]
-
+    
+    # 6
     def eevee_socket(self):
         if out := self.eevee.outputs.get("Eevee"):
             return out
         else:
             return self.eevee.outputs[0]
-
+    
+    # 29
     def add_group(self, cls: Type, name, col=None,
                   size=0, args=[], force=False):
         from daz_import.Elements.ShaderGroup import ShaderGroup
@@ -133,6 +139,7 @@ class CyclesShader(CyclesStatic):
         group.addNodes(args)
 
         return node
+    # 1
 
     def _add_shell_group(self, shell, push) -> ShaderNodeGroup:
         from daz_import.Elements.ShaderGroup import OpaqueShellPbrGroup, RefractiveShellPbrGroup
@@ -191,7 +198,7 @@ class CyclesShader(CyclesStatic):
     def build(self):
         self._build_shader()
         if self.easy_shader:
-            self.easy_build()
+            self._easy_build()
             return
 
         self._build_layer()
@@ -201,7 +208,7 @@ class CyclesShader(CyclesStatic):
         self._build_shells()
         self.buildOutput()
 
-    def easy_build(self):
+    def _easy_build(self):
         graph = self.shader_graph
 
         graph.clear()
@@ -222,9 +229,10 @@ class CyclesShader(CyclesStatic):
             shader.diffuse += diffuse.outputs['Color']
 
         # _get_glossy_color
-        # getTranslucentColor
+        # _get_translucent_color
         # getRefractionColor
 
+    # 1
     def _build_shells(self):
         shells = []
         n = 0
@@ -256,33 +264,35 @@ class CyclesShader(CyclesStatic):
 
             self.displacement = node.outputs["Displacement"]
             self.ycoords[self.column] -= 50
-
+    
+    # 8
     def _build_layer(self, uvname=''):
         self._build_normal(uvname)
         self._build_bump()
         self._build_detail(uvname)
         self._build_diffuse()
 
-        self.buildTranslucency()
+        self._build_translucency()
         self._build_makeup()
         self._build_overlay()
 
         if self.material.dualLobeWeight == 1:
             self._build_dual_lobe()
         elif self.material.dualLobeWeight == 0:
-            self.buildGlossy()
+            self._build_glossy()
         else:
-            self.buildGlossy()
+            self._build_glossy()
             self._build_dual_lobe()
 
         if self.material.refractive:
             self.buildRefraction()
 
-        self.buildTopCoat()
-        self.buildEmission()
+        self._build_top_coat()
+        self._build_emission()
 
         return self.cycles
 
+    # 4
     def _build_shader(self, slot="UV"):
         mat = self.material.rna
         if not mat:
@@ -296,6 +306,7 @@ class CyclesShader(CyclesStatic):
 
         return self._add_texco(slot)
 
+    # 4
     def _add_texco(self, slot):
         if self.easy_shader:
             return
@@ -319,12 +330,14 @@ class CyclesShader(CyclesStatic):
             self._add_uv_node(key, uvset.name)
 
         return node
+    # 2
 
     def _add_uv_node(self, key, uvname):
         node = self.add_node("ShaderNodeUVMap", 1)
         node.uv_map = uvname
         self.texcos[key] = node.outputs["UV"]
 
+    # 2
     def _map_texco(self, ox, oy, kx, ky):
         if ox != 0 or oy != 0 or kx not in [0, 1] or ky not in [0, 1]:
             sx = sy = 1
@@ -508,7 +521,7 @@ class CyclesShader(CyclesStatic):
         if not self.is_enabled("Diffuse"):
             return
         color, tex = self._get_diffuse_color()
-        self.diffuseTex = tex
+        self._diffuse_tex = tex
         node = self.add_node("ShaderNodeBsdfDiffuse")
         self.cycles = self.eevee = node
         self.link_color(tex, node, color, "Color")
@@ -710,22 +723,27 @@ class CyclesShader(CyclesStatic):
 
         return color, tex
 
-    def buildGlossy(self):
+    def _build_glossy(self):
+        from daz_import.Elements.ShaderGroup import FresnelShaderGroup
+        from daz_import.Elements.ShaderGroup import GlossyShaderGroup
+
         color = self.get_color("getChannelGlossyColor", ColorStatic.BLACK)
         strength = self.getValue("getChannelGlossyLayeredWeight", 0)
         if ColorStatic.isBlack(color) or strength == 0:
             return
 
-        from daz_import.Elements.ShaderGroup import FresnelShaderGroup
         fresnel = self.add_group(FresnelShaderGroup, "DAZ Fresnel")
-        ior, iortex = self.getFresnelIOR()
+        ior, iortex = self._get_fresnel_IOR()
+
         self.link_scalar(iortex, fresnel, ior, "IOR")
+
         self._link_bump_normal(fresnel)
         self.fresnel = fresnel
 
         #   glossy bsdf roughness = iray glossy roughness ^ 2
         channel, invert = self.material.getChannelGlossiness()
         invert = not invert             # roughness = invert glossiness
+
         value = UtilityStatic.clamp(
             self.material.channelsData.getChannelValue(channel, 0.0))
 
@@ -740,7 +758,6 @@ class CyclesShader(CyclesStatic):
             roughness = roughness**2
             value = value**2
 
-        from daz_import.Elements.ShaderGroup import GlossyShaderGroup
         self.column += 1
         glossy = self.add_group(GlossyShaderGroup, "DAZ Glossy", size=100)
         color, tex = self._get_glossy_color()
@@ -755,7 +772,7 @@ class CyclesShader(CyclesStatic):
         Settings.usedFeatures_["Glossy"] = True
         self.__mix_with_active(1.0, self.fresnel, glossy)
 
-    def getFresnelIOR(self):
+    def _get_fresnel_IOR(self):
         #   fresnel ior = 1.1 + iray glossy reflectivity * 0.7
         #   fresnel ior = 1.1 + iray glossy specular / 0.078
         ior = 1.45
@@ -775,9 +792,11 @@ class CyclesShader(CyclesStatic):
 
             if tex:
                 iortex = self.multiplyAddScalarTex(factor, 1.1, tex)
+
         return ior, iortex
 
-    def buildTopCoat(self):
+    # 1
+    def _build_top_coat(self):
         if not self.is_enabled("Top Coat"):
             return
 
@@ -788,8 +807,10 @@ class CyclesShader(CyclesStatic):
 
         # Top Coat Layering Mode
         #   [ "Reflectivity", "Weighted", "Fresnel", "Custom Curve" ]
+
         lmode = self.getValue(["Top Coat Layering Mode"], 0)
         fresnel = refltex = None
+
         if lmode == 2:  # Fresnel
             from daz_import.Elements.ShaderGroup import FresnelShaderGroup
             weight = 0.5
@@ -822,6 +843,7 @@ class CyclesShader(CyclesStatic):
             ["Top Coat Color"], "COLOR", ColorStatic.WHITE)
         roughness, roughtex = self._get_color_tex(
             ["Top Coat Roughness"], "NONE", 0)
+
         if roughness == 0:
             glossiness, glosstex = self._get_color_tex(
                 ["Top Coat Glossiness"], "NONE", 1)
@@ -829,10 +851,12 @@ class CyclesShader(CyclesStatic):
             roughtex = self.invertTex(glosstex, 5)
 
         from daz_import.Elements.ShaderGroup import TopCoatShaderGroup
+
         self.column += 1
         top = self.add_group(TopCoatShaderGroup, "DAZ Top Coat", size=100)
         self.link_color(coltex, top, color, "Color")
         self.link_scalar(roughtex, top, roughness, "Roughness")
+
         if self.material.shader_key == 'PBRSKIN':
             if self.bumptex:
                 self.link(self.bumptex.outputs[0], top.inputs["Height"])
@@ -842,14 +866,17 @@ class CyclesShader(CyclesStatic):
             self.link(bumptex.outputs[0], top.inputs["Height"])
             self.material.addGeoBump(bumptex, top.inputs["Distance"])
             self._link_bump_normal(top)
+
         top.inputs["Bump"].default_value = bump * Settings.bumpFactor
         self.__mix_with_active(weight, weighttex, top)
+
         if fresnel:
             self.link_scalar(roughtex, fresnel, roughness, "Roughness")
             self._link_bump_normal(fresnel)
             self.link(fresnel.outputs[0], top.inputs["Fac"])
 
-    def checkTranslucency(self):
+    # 2
+    def _check_translucency(self):
         if not self.is_enabled("Translucency"):
             return False
         if (self.material.thinWall or
@@ -859,10 +886,11 @@ class CyclesShader(CyclesStatic):
         if (self.material.refractive or
                 not self.material.translucent):
             return False
+    # 1
 
-    def buildTranslucency(self):
+    def _build_translucency(self):
         if (Settings.materialMethod != 'BSDF' or
-                not self.checkTranslucency()):
+                not self._check_translucency()):
             return
         fac = self.getValue("getChannelTranslucencyWeight", 0)
         effect = self.getValue(["Base Color Effect"], 0)
@@ -870,7 +898,7 @@ class CyclesShader(CyclesStatic):
             return
         self.column += 1
         mat = self.material.rna
-        color, tex = self.getTranslucentColor()
+        color, tex = self._get_translucent_color()
 
         if ColorStatic.isBlack(color):
             return
@@ -901,12 +929,13 @@ class CyclesShader(CyclesStatic):
         Settings.usedFeatures_["Transparent"] = True
         self.endSSS()
 
-    def getTranslucentColor(self):
+    # 2
+    def _get_translucent_color(self):
         color, tex = self._get_color_tex(
             ["Translucency Color"], "COLOR", ColorStatic.BLACK)
         if (tex is None and
                 (Settings.useFakeTranslucencyTexture or not Settings.useVolume)):
-            tex = self.diffuseTex
+            tex = self._diffuse_tex
         return color, tex
 
     def getSSSColor(self):
@@ -1077,7 +1106,7 @@ class CyclesShader(CyclesStatic):
     #   Emission
     # -------------------------------------------------------------
 
-    def buildEmission(self):
+    def _build_emission(self):
         if not Settings.useEmission:
             return
         color = self.get_color("getChannelEmissionColor", ColorStatic.BLACK)
@@ -1586,43 +1615,42 @@ class CyclesShader(CyclesStatic):
             return tex2
 
     def selectDiffuse(self, marked):
-        if self.diffuseTex and marked[self.diffuseTex.name]:
-            self.diffuseTex.select = True
-            self.shader_graph.nodes.active = self.diffuseTex
+        if self._diffuse_tex and marked[self._diffuse_tex.name]:
+            self._diffuse_tex.select = True
+            self.shader_graph.set_active_node(self._diffuse_tex)
 
-    def _get_link(self, node, slot):
+    # 1 ShaderNode
+    def _get_link(self, node, key_slot):
         for link in self.links:
-            if (link.to_node == node and
-                    link.to_socket.name == slot):
+            if link.to_node == node and \
+                    link.to_socket.name == key_slot:
                 return link
         return None
 
+    # 9 ShaderNode
     def _remove_link(self, node, slot):
         if link := self._get_link(node, slot):
             self.links.remove(link)
 
+    # 10 ShaderNode
     def _replace_slot(self, node, slot, value):
         node.inputs[slot].default_value = value
         self._remove_link(node, slot)
 
+    # 2 ShaderGraph
     def find_texco(self, col):
         if nodes := self.find_nodes("TEX_COORD"):
             return nodes[0]
         else:
             return self.add_node("ShaderNodeTexCoord", col)
 
+    # 3  to shader_graph
     def find_nodes(self, nodeType):
         nodes = []
         for node in self.shader_graph.nodes.values():
             if node.type == nodeType:
                 nodes.append(node)
         return nodes
-
-    @classmethod
-    def create_shader(cls, mat: BlenderMaterial) -> CyclesShader:
-        shader = cls(None)
-        shader.set_material(mat)
-        return shader
 
     def findNode(self, key):
         return super().findNode(self.shader_graph, key)
