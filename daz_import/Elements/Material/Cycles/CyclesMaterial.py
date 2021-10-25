@@ -109,8 +109,7 @@ class CyclesMaterial(Material):
 
         if self.shader_object:
             if Settings.pruneNodes:
-                marked = CyclesStatic.pruneNodeTree(self.shader_object.shader_graph)
-                
+                marked = self.shader_object.pruneNodeTree()                
                 if isinstance(self.shader_object, CyclesShader):
                     self.shader_object.selectDiffuse(marked)
 

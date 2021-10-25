@@ -213,8 +213,8 @@ class DispAdder:
         for node in shader.find_nodes("OUTPUT_MATERIAL"):
             shader.link(disp.outputs["Displacement"],
                         node.inputs["Displacement"])
-        if self.usePrune:
-            CyclesStatic.pruneNodeTree(shader.shader_graph)
+        if self.usePrune:            
+            shader.pruneNodeTree()
 
 
 class ScalarDispAdder(DispAdder):
@@ -453,8 +453,9 @@ class NormalAdder:
         else:
             print("No link to normal map node")
 
-        if self.usePrune:
-            CyclesStatic.pruneNodeTree(shader.shader_graph)
+        if self.usePrune:            
+            shader.pruneNodeTree()
+
 
 
 @Registrar()

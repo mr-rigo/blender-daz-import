@@ -103,21 +103,21 @@ class CyclesShader(CyclesStatic):
             self._add_uv_node(key, key)
 
         return self.texcos.get(key)
-    
+
     # 7
     def cycles_socket(self):
         if out := self.cycles.outputs.get("Cycles"):
             return out
         else:
             return self.cycles.outputs[0]
-    
+
     # 6
     def eevee_socket(self):
         if out := self.eevee.outputs.get("Eevee"):
             return out
         else:
             return self.eevee.outputs[0]
-    
+
     # 29
     def add_group(self, cls: Type, name, col=None,
                   size=0, args=[], force=False):
@@ -264,7 +264,7 @@ class CyclesShader(CyclesStatic):
 
             self.displacement = node.outputs["Displacement"]
             self.ycoords[self.column] -= 50
-    
+
     # 8
     def _build_layer(self, uvname=''):
         self._build_normal(uvname)
@@ -1665,3 +1665,6 @@ class CyclesShader(CyclesStatic):
         self.shader_graph.init(obj, False)
         # self.nodes = obj.nodes
         self.links = obj.links
+
+    def pruneNodeTree(self):
+        return super().pruneNodeTree(self.shader_graph)
