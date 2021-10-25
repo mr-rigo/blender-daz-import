@@ -193,7 +193,7 @@ class CyclesLightMaterial(CyclesMaterial):
 class LightShader(CyclesShader):
 
     def build(self):
-        self.makeTree()
+        self._build_shader()
         color = self.getValue(["Color"], ColorStatic.WHITE)
         #flux = self.getValue(["Flux"], 15000)
 
@@ -203,5 +203,5 @@ class LightShader(CyclesShader):
         output = self.add_node("ShaderNodeOutputLight", 2)
         self.link(emit.outputs[0], output.inputs["Surface"])
 
-    def addTexco(self, slot):
+    def _add_texco(self, slot):
         ...

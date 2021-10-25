@@ -82,9 +82,9 @@ class ShellGroup:
 
         self.material = shmat
         self.texco = self.inputs.outputs["UV"]
-        self.buildLayer(uvname)
+        self._build_layer(uvname)
 
-        alpha, tex = self.getColorTex("getChannelCutoutOpacity", "NONE", 1.0)
+        alpha, tex = self._get_color_tex("getChannelCutoutOpacity", "NONE", 1.0)
 
         mult = self.add_node("ShaderNodeMath", 6)
         mult.operation = 'MULTIPLY'
@@ -1183,7 +1183,7 @@ class LieShaderGroup(ShaderGroup):
         if not asset.hasMapping(map_):
             return
         data = asset.getMapping(self.material, map_)
-        return self.addMappingNode(data, map_)
+        return self._add_mapping_node(data, map_)
 
 
 def setMixOperation(mix, map_):

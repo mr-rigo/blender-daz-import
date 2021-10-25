@@ -105,16 +105,16 @@ class HairShader(CyclesShader):
         self.tiptex = None
 
     def build(self):
-        self.makeTree()
-        self.buildLayer("")
+        self._build_shader()
+        self._build_layer("")
 
     def initLayer(self):
         self.column = 4
         self.active = None
-        self.buildBump()
+        self._build_bump()
 
-    def addTexco(self, slot):
-        super().addTexco(slot)
+    def _add_texco(self, slot):
+        super()._add_texco(slot)
         self.info = self.add_node('ShaderNodeHairInfo', col=1)
         #self.texco = self.info.outputs["Intercept"]
 
@@ -123,7 +123,7 @@ class HairShader(CyclesShader):
         output = self.add_node('ShaderNodeOutputMaterial')
         self.link(self.active.outputs[0], output.inputs['Surface'])
 
-    def buildBump(self):
+    def _build_bump(self):
         strength = self.getValue(["Bump Strength"], 1)
         # if False and strength:
         #     bump = self.add_node("ShaderNodeBump", col=2)
@@ -136,7 +136,7 @@ class HairShader(CyclesShader):
         self.link(
             self.info.outputs["Tangent Normal"], node.inputs["Tangent"])
 
-    def linkBumpNormal(self, node):
+    def _link_bump_normal(self, node):
         self.link(
             self.info.outputs["Tangent Normal"], node.inputs["Normal"])
 
@@ -163,9 +163,9 @@ class HairShader(CyclesShader):
         return ramp
 
     def readColor(self, factor):
-        root, self.roottex = self.getColorTex(
+        root, self.roottex = self._get_color_tex(
             ["Hair Root Color"], "COLOR", self.color, useFactor=False)
-        tip, self.tiptex = self.getColorTex(
+        tip, self.tiptex = self._get_color_tex(
             ["Hair Tip Color"], "COLOR", self.color, useFactor=False)
         self.material.rna.diffuse_color[0:3] = root
         self.root = factor * Vector(root)
@@ -298,7 +298,7 @@ class FadeHairShader(HairShader):
 
 class HairPBRShader(HairShader):
 
-    def buildLayer(self, uvname):
+    def _build_layer(self, uvname):
         self.initLayer()
         self.readColor(0.216)
         pbr = self.active = self.add_node("ShaderNodeBsdfHairPrincipled")
@@ -312,7 +312,7 @@ class HairPBRShader(HairShader):
 
 class HairBSDFShader(HairShader):
 
-    def buildLayer(self, uvname):
+    def _build_layer(self, uvname):
         self.initLayer()
         self.readColor(0.5)
         trans = self.buildTransmission()
@@ -327,9 +327,9 @@ class HairBSDFShader(HairShader):
         self.buildOutput()
 
     def buildTransmission(self):
-        root, roottex = self.getColorTex(
+        root, roottex = self._get_color_tex(
             ["Root Transmission Color"], "COLOR", self.color, useFactor=False)
-        tip, tiptex = self.getColorTex(
+        tip, tiptex = self._get_color_tex(
             ["Tip Transmission Color"], "COLOR", self.color, useFactor=False)
         trans = self.add_node('ShaderNodeBsdfHair')
         trans.component = 'Transmission'
@@ -365,7 +365,7 @@ class HairBSDFShader(HairShader):
             arots = self.getValue(["Anisotropy Rotations"], 0)
             node.inputs["Rotation"].default_value = arots
             self.linkTangent(node)
-            self.linkBumpNormal(node)
+            self._link_bump_normal(node)
             self.column += 1
             self.active = self.addShaders(self.active, node)
 
@@ -383,7 +383,7 @@ class HairBSDFShader(HairShader):
 
 class HairEeveeShader(HairShader):
 
-    def buildLayer(self, uvname):
+    def _build_layer(self, uvname):
         self.initLayer()
         self.readColor(0.216)
 

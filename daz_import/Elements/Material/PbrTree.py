@@ -17,7 +17,7 @@ class PBRShader(CyclesShader):
     def __repr__(self):
         return ("<Pbr %s %s %s>" % (self.material.rna, self.shader_graph.nodes, self.links))
 
-    def buildLayer(self, uvname):
+    def _build_layer(self, uvname):
         self.column = 4
         
         try:
@@ -28,24 +28,24 @@ class PBRShader(CyclesShader):
             self.type = 'CYCLES'
             
         if self.pbr is None:
-            return super().buildLayer(uvname)
+            return super()._build_layer(uvname)
 
         self.cycles = self.eevee = self.pbr
-        self.buildNormal(uvname)
-        self.buildBump()
-        self.buildDetail(uvname)
+        self._build_normal(uvname)
+        self._build_bump()
+        self._build_detail(uvname)
         self.buildPBRNode()
         self.linkPBRNormal(self.pbr)
         self.postPBR = False
 
-        if self.buildMakeup():
+        if self._build_makeup():
             self.postPBR = True
 
-        if self.buildOverlay():
+        if self._build_overlay():
             self.postPBR = True
 
         if self.material.dualLobeWeight > 0:
-            self.buildDualLobe()
+            self._build_dual_lobe()
             self.replaceSlot(self.pbr, "Specular", 0)
             self.postPBR = True
 
@@ -72,7 +72,7 @@ class PBRShader(CyclesShader):
 
     def buildCutout(self):
         if "Alpha" in self.pbr.inputs.keys() and not self.postPBR:
-            alpha, tex = self.getColorTex("getChannelCutoutOpacity", "NONE", 1)
+            alpha, tex = self._get_color_tex("getChannelCutoutOpacity", "NONE", 1)
             if alpha < 1 or tex:
                 self.material.setTransSettings(
                     False, False, ColorStatic.WHITE, alpha)
@@ -99,7 +99,7 @@ class PBRShader(CyclesShader):
 
     def buildPBRNode(self):
         if self.is_enabled("Diffuse"):
-            color, tex = self.getDiffuseColor()
+            color, tex = self._get_diffuse_color()
             self.diffuseColor = color
             self.diffuseTex = tex
             self.link_color(tex, self.pbr, color, "Base Color")
@@ -109,7 +109,7 @@ class PBRShader(CyclesShader):
 
         # Metallic Weight
         if self.is_enabled("Metallicity"):
-            metallicity, tex = self.getColorTex(
+            metallicity, tex = self._get_color_tex(
                 ["Metallic Weight"], "NONE", 0.0)
             self.link_scalar(tex, self.pbr, metallicity, "Metallic")
         else:
@@ -121,10 +121,10 @@ class PBRShader(CyclesShader):
         self.buildSSS()
 
         # Anisotropic
-        anisotropy, tex = self.getColorTex(["Glossy Anisotropy"], "NONE", 0)
+        anisotropy, tex = self._get_color_tex(["Glossy Anisotropy"], "NONE", 0)
         if anisotropy > 0:
             self.link_scalar(tex, self.pbr, anisotropy, "Anisotropic")
-            anirot, tex = self.getColorTex(
+            anirot, tex = self._get_color_tex(
                 ["Glossy Anisotropy Rotations"], "NONE", 0)
             value = 0.75 - anirot
             self.link_scalar(tex, self.pbr, value, "Anisotropic Rotation")
@@ -135,14 +135,14 @@ class PBRShader(CyclesShader):
         self.add_slot(channel, self.pbr, "Roughness", roughness, value, invert)
 
         # Specular
-        strength, strtex = self.getColorTex(
+        strength, strtex = self._get_color_tex(
             "getChannelGlossyLayeredWeight", "NONE", 1.0, False)
         if self.material.shader_key == 'UBER_IRAY':
             if self.material.basemix == 0:    # Metallic/Roughness
                 # principled specular = iray glossy reflectivity * iray glossy layered weight * iray glossy color / 0.8
-                refl, reftex = self.getColorTex(
+                refl, reftex = self._get_color_tex(
                     "getChannelGlossyReflectivity", "NONE", 0.5, False, useTex)
-                color, coltex = self.getColorTex(
+                color, coltex = self._get_color_tex(
                     "getChannelGlossyColor", "COLOR", ColorStatic.WHITE, True, useTex)
                 if reftex and coltex:
                     reftex = self.mixTexs('MULTIPLY', coltex, reftex)
@@ -153,13 +153,13 @@ class PBRShader(CyclesShader):
                 value = factor * VectorStatic.color(color)
             elif self.material.basemix == 1:  # Specular/Glossiness
                 # principled specular = iray glossy specular * iray glossy layered weight * 16
-                color, reftex = self.getColorTex(
+                color, reftex = self._get_color_tex(
                     "getChannelGlossySpecular", "COLOR", ColorStatic.WHITE, True, useTex)
                 tex = self.mixTexs('MULTIPLY', strtex, reftex)
                 factor = 16 * strength
                 value = factor * VectorStatic.color(color)
         else:
-            color, coltex = self.getColorTex(
+            color, coltex = self._get_color_tex(
                 "getChannelGlossyColor", "COLOR", ColorStatic.WHITE, True, useTex)
             tex = self.mixTexs('MULTIPLY', strtex, coltex)
             value = factor = strength * VectorStatic.color(color)
@@ -171,11 +171,11 @@ class PBRShader(CyclesShader):
                 self.link(tex.outputs[0], self.pbr.inputs["Specular"])
 
         # Clearcoat
-        top, toptex = self.getColorTex(["Top Coat Weight"], "NONE", 1.0, False)
+        top, toptex = self._get_color_tex(["Top Coat Weight"], "NONE", 1.0, False)
 
         if self.material.shader_key == 'UBER_IRAY':
             if self.material.basemix == 0:    # Metallic/Roughness
-                refl, reftex = self.getColorTex(
+                refl, reftex = self._get_color_tex(
                     "getChannelGlossyReflectivity", "NONE", 0.5, False, useTex)
                 tex = self.mixTexs('MULTIPLY', toptex, reftex)
                 value = 1.25 * refl * top
@@ -193,12 +193,12 @@ class PBRShader(CyclesShader):
             if tex:
                 self.link(tex.outputs[0], self.pbr.inputs["Clearcoat"])
 
-        rough, tex = self.getColorTex(["Top Coat Roughness"], "NONE", 1.45)
+        rough, tex = self._get_color_tex(["Top Coat Roughness"], "NONE", 1.45)
         self.link_scalar(tex, self.pbr, rough, "Clearcoat Roughness")
 
         # Sheen
         if self.is_enabled("Velvet"):
-            velvet, tex = self.getColorTex(["Velvet Strength"], "NONE", 0.0)
+            velvet, tex = self._get_color_tex(["Velvet Strength"], "NONE", 0.0)
             self.link_scalar(tex, self.pbr, velvet, "Sheen")
 
     def buildSSS(self):
@@ -206,7 +206,7 @@ class PBRShader(CyclesShader):
             return
         if not self.checkTranslucency():
             return
-        wt, wttex = self.getColorTex("getChannelTranslucencyWeight", "NONE", 0)
+        wt, wttex = self._get_color_tex("getChannelTranslucencyWeight", "NONE", 0)
         if wt == 0:
             return
         color, coltex = self.getTranslucentColor()
@@ -231,18 +231,18 @@ class PBRShader(CyclesShader):
         channel = self.material.getChannelRefractionWeight()
 
         if channel:
-            return self.getColorTex("getChannelRefractionWeight", "NONE", 0.0)
+            return self._get_color_tex("getChannelRefractionWeight", "NONE", 0.0)
         channel = self.material.getChannelOpacity()
 
         if channel:
-            value, tex = self.getColorTex("getChannelOpacity", "NONE", 1.0)
+            value, tex = self._get_color_tex("getChannelOpacity", "NONE", 1.0)
             invtex = self.fixTex(tex, value, True)
             return 1-value, invtex
 
         return 1, None
 
     def buildPBRRefraction(self):
-        weight, wttex = self.getColorTex(
+        weight, wttex = self._get_color_tex(
             "getChannelRefractionWeight", "NONE", 0.0)
 
         if weight == 0:
@@ -250,7 +250,7 @@ class PBRShader(CyclesShader):
 
         color, coltex, roughness, roughtex = self.getRefractionColor()
 
-        ior, iortex = self.getColorTex("getChannelIOR", "NONE", 1.45)
+        ior, iortex = self._get_color_tex("getChannelIOR", "NONE", 1.45)
 
         if Settings.refractiveMethod == 'SECOND':
             if weight < 1 or wttex:
@@ -293,7 +293,7 @@ class PBRShader(CyclesShader):
             self.material.setTransSettings(True, False, color, 0.1)
             self.replaceSlot(pbr, "IOR", 1.0)
             self.replaceSlot(pbr, "Roughness", 0.0)
-            strength, strtex = self.getColorTex(
+            strength, strtex = self._get_color_tex(
                 "getChannelGlossyLayeredWeight", "NONE", 1.0, False)
             clearcoat = (ior-1)*10*strength
             self.removeLink(pbr, "Clearcoat")
@@ -307,12 +307,12 @@ class PBRShader(CyclesShader):
             # principled ior = iray refraction index
             # principled roughness = iray glossy roughness
             self.material.setTransSettings(True, False, color, 0.2)
-            transcolor, transtex = self.getColorTex(
+            transcolor, transtex = self._get_color_tex(
                 ["Transmitted Color"], "COLOR", ColorStatic.BLACK)
             dist = self.getValue(["Transmitted Measurement Distance"], 0.0)
             if not (ColorStatic.isBlack(transcolor) or ColorStatic.isWhite(transcolor) or dist == 0.0):
                 coltex = self.mixTexs('MULTIPLY', coltex, transtex)
-                color = self.compProd(color, transcolor)
+                color = self._comp_prod(color, transcolor)
             self.replaceSlot(pbr, "Metallic", 0)
             self.replaceSlot(pbr, "Specular", 0.5)
             self.removeLink(pbr, "IOR")

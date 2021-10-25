@@ -13,7 +13,7 @@ class WorldShader(CyclesShader):
         backdrop = self.material.backdrop
         background = self.material.background
         envmap = self.material.envmap
-        self.texco = self.makeTree()
+        self.texco = self._build_shader()
         self.column = 5
         envnode = bgnode = socket = None
 
