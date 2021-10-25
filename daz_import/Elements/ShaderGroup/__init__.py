@@ -1106,7 +1106,7 @@ class LieShaderGroup(ShaderGroup):
                 else:
                     img = asset.images[colorSpace]
                     if img:
-                        self.setTexNode(img.name, texnode, colorSpace)
+                        self._set_tex_node__(img.name, texnode, colorSpace)
                     else:
                         msg = ("Missing image: %s" % asset.getName())
                         ErrorsStatic.report(msg, trigger=(3, 5))
@@ -1147,7 +1147,7 @@ class LieShaderGroup(ShaderGroup):
                 mix.blend_type = 'MULTIPLY'
                 mix.use_alpha = False
                 mask = texnodes[idx][-1]
-                self.setColorSpace(mask, 'NONE')
+                self._set_color_space(mask, 'NONE')
                 self.link(mask.outputs["Color"], mix.inputs[0])
                 self.link(texnode.outputs["Color"], mix.inputs[1])
                 self.link(
@@ -1184,7 +1184,7 @@ class LieShaderGroup(ShaderGroup):
         if not asset.hasMapping(map_):
             return
         data = asset.getMapping(self.material, map_)
-        return self._add_mapping_node(data, map_)
+        return self._get_mapping_node(data, map_)
 
 
 def setMixOperation(mix, map_):

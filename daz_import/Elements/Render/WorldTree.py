@@ -61,7 +61,7 @@ class WorldShader(CyclesShader):
         tex = None
         if img:
             tex = self.add_node("ShaderNodeTexEnvironment", 3)
-            self.setColorSpace(tex, "NONE")
+            self._set_color_space(tex, "NONE")
             if img:
                 tex.image = img
                 tex.name = img.name
@@ -100,7 +100,7 @@ class WorldShader(CyclesShader):
             img = self.getImage(backdrop, "COLOR")
             if img:
                 tex = self.addTextureNode(3, img, img.name, "COLOR")
-                self.linkVector(texco, tex)
+                self._link_vector(texco, tex)
         from .BackgroundGroup import BackgroundGroup
 
         bgnode = self.add_group(BackgroundGroup, "DAZ Background")

@@ -53,7 +53,7 @@ class PBRShader(CyclesShader):
         if self.material.refractive:
 
             if Settings.refractiveMethod == 'BSDF':
-                self.buildRefraction()
+                self._build_refraction()
                 self.postPBR = True
             else:
                 self.buildPBRRefraction()
@@ -71,7 +71,7 @@ class PBRShader(CyclesShader):
             self.link(
                 self.normal.outputs["Normal"], pbr.inputs["Clearcoat Normal"])
 
-    def buildCutout(self):
+    def _build_cutout(self):
         if "Alpha" in self.pbr.inputs.keys() and not self.postPBR:
             alpha, tex = self._get_color_tex("getChannelCutoutOpacity", "NONE", 1)
             if alpha < 1 or tex:
@@ -82,7 +82,7 @@ class PBRShader(CyclesShader):
             if tex:
                 self.link(tex.outputs[0], self.pbr.inputs["Alpha"])
         else:
-            CyclesShader.buildCutout(self)
+            CyclesShader._build_cutout(self)
 
     def buildVolume(self):
         ...
@@ -94,7 +94,7 @@ class PBRShader(CyclesShader):
         elif "Emission" in self.pbr.inputs.keys():
             color = self.get_color("getChannelEmissionColor", ColorStatic.BLACK)
             if not ColorStatic.isBlack(color):
-                self.addEmitColor(self.pbr, "Emission")
+                self._add_emit_color(self.pbr, "Emission")
         else:
             super()._build_emission()
             self.postPBR = True
@@ -147,23 +147,23 @@ class PBRShader(CyclesShader):
                 color, coltex = self._get_color_tex(
                     "getChannelGlossyColor", "COLOR", ColorStatic.WHITE, True, useTex)
                 if reftex and coltex:
-                    reftex = self.mixTexs('MULTIPLY', coltex, reftex)
+                    reftex = self._mix_texs('MULTIPLY', coltex, reftex)
                 elif coltex:
                     reftex = coltex
-                tex = self.mixTexs('MULTIPLY', strtex, reftex)
+                tex = self._mix_texs('MULTIPLY', strtex, reftex)
                 factor = 1.25 * refl * strength
                 value = factor * VectorStatic.color(color)
             elif self.material.basemix == 1:  # Specular/Glossiness
                 # principled specular = iray glossy specular * iray glossy layered weight * 16
                 color, reftex = self._get_color_tex(
                     "getChannelGlossySpecular", "COLOR", ColorStatic.WHITE, True, useTex)
-                tex = self.mixTexs('MULTIPLY', strtex, reftex)
+                tex = self._mix_texs('MULTIPLY', strtex, reftex)
                 factor = 16 * strength
                 value = factor * VectorStatic.color(color)
         else:
             color, coltex = self._get_color_tex(
                 "getChannelGlossyColor", "COLOR", ColorStatic.WHITE, True, useTex)
-            tex = self.mixTexs('MULTIPLY', strtex, coltex)
+            tex = self._mix_texs('MULTIPLY', strtex, coltex)
             value = factor = strength * VectorStatic.color(color)
 
         self.pbr.inputs["Specular"].default_value = UtilityStatic.clamp(value)
@@ -179,7 +179,7 @@ class PBRShader(CyclesShader):
             if self.material.basemix == 0:    # Metallic/Roughness
                 refl, reftex = self._get_color_tex(
                     "getChannelGlossyReflectivity", "NONE", 0.5, False, useTex)
-                tex = self.mixTexs('MULTIPLY', toptex, reftex)
+                tex = self._mix_texs('MULTIPLY', toptex, reftex)
                 value = 1.25 * refl * top
             else:
                 tex = toptex
@@ -250,7 +250,7 @@ class PBRShader(CyclesShader):
         if weight == 0:
             return
 
-        color, coltex, roughness, roughtex = self.getRefractionColor()
+        color, coltex, roughness, roughtex = self._get_refraction_color()
 
         ior, iortex = self._get_color_tex("getChannelIOR", "NONE", 1.45)
 
@@ -313,14 +313,14 @@ class PBRShader(CyclesShader):
                 ["Transmitted Color"], "COLOR", ColorStatic.BLACK)
             dist = self.getValue(["Transmitted Measurement Distance"], 0.0)
             if not (ColorStatic.isBlack(transcolor) or ColorStatic.isWhite(transcolor) or dist == 0.0):
-                coltex = self.mixTexs('MULTIPLY', coltex, transtex)
+                coltex = self._mix_texs('MULTIPLY', coltex, transtex)
                 color = self._comp_prod(color, transcolor)
             self._replace_slot(pbr, "Metallic", 0)
             self._replace_slot(pbr, "Specular", 0.5)
             self._remove_link(pbr, "IOR")
             self.link_scalar(iortex, pbr, ior, "IOR")
             self._remove_link(pbr, "Roughness")
-            self.setRoughness(pbr, "Roughness", roughness,
+            self._set_roughness(pbr, "Roughness", roughness,
                               roughtex, square=False)
 
         self._remove_link(pbr, "Base Color")

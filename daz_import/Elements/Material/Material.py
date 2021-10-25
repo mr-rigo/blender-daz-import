@@ -22,7 +22,10 @@ class Material(Asset):
     loaded: Dict[str, BlenderMat] = {}
 
     def __init__(self, fileref: str):
+        from daz_import.geometry import Shell
+
         super().__init__(fileref)
+        
         self.channelsData: Channels = Channels(self)
 
         self.scene = None
@@ -32,7 +35,7 @@ class Material(Asset):
         self.groups = []
         self.ignore = False
         self.force = False
-        self.shells = {}
+        self.shells: Dict[str, Shell] = {}
 
         self.geometry: GeoNode = None
         self.geoemit = []

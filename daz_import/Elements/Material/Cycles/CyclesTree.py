@@ -61,6 +61,7 @@ class CyclesShader(CyclesStatic):
 
         if b_mat:
             self.set_material(b_mat)
+    # Node
 
     def link(self, a, b):
         return self.links.new(a, b)
@@ -68,15 +69,19 @@ class CyclesShader(CyclesStatic):
     def __repr__(self):
         return ("<Cycles %s %s %s>" % (self.material.rna, self.shader_graph.nodes, self.shader_graph.links))
 
+    # Material
     def getValue(self, channel, default):
         return self.material.channelsData.getValue(channel, default)
 
+    # Material
     def is_enabled(self, key) -> bool:
         return self.material.enabled.get(key)
 
+    # Material
     def get_color(self, channel, default):
         return self.material.get_color(channel, default)
 
+    # ShaderGraph
     def add_node(self, stype, col=None, size=0, label=None, parent=None) -> ShaderNode:
         if col is None:
             col = self.column
@@ -91,8 +96,10 @@ class CyclesShader(CyclesStatic):
 
         if parent:
             node.parent = parent
+
         return node
 
+    # ShaderGraph
     def _get_texco(self, uv: str) -> NodeSocketVector:
         key = self.material.getUvKey(uv, self.texcos)
 
@@ -104,21 +111,21 @@ class CyclesShader(CyclesStatic):
 
         return self.texcos.get(key)
 
-    # 7
+    # ShaderGraph 7
     def cycles_socket(self):
         if out := self.cycles.outputs.get("Cycles"):
             return out
         else:
             return self.cycles.outputs[0]
 
-    # 6
+    # ShaderGraph 6
     def eevee_socket(self):
         if out := self.eevee.outputs.get("Eevee"):
             return out
         else:
             return self.eevee.outputs[0]
 
-    # 29
+    # Node 29
     def add_group(self, cls: Type, name, col=None,
                   size=0, args=[], force=False):
         from daz_import.Elements.ShaderGroup import ShaderGroup
@@ -139,8 +146,8 @@ class CyclesShader(CyclesStatic):
         group.addNodes(args)
 
         return node
-    # 1
 
+    # ShaderGraph / Node 1
     def _add_shell_group(self, shell, push) -> ShaderNodeGroup:
         from daz_import.Elements.ShaderGroup import OpaqueShellPbrGroup, RefractiveShellPbrGroup
         from daz_import.Elements.ShaderGroup import OpaqueShellCyclesGroup, RefractiveShellCyclesGroup
@@ -150,11 +157,10 @@ class CyclesShader(CyclesStatic):
         shmat.isShellMat = True
         shname = shell.name
 
-        if (shmat.getValue("getChannelCutoutOpacity", 1) == 0 or
-                shmat.getValue("getChannelOpacity", 1) == 0):
+        if shmat.getValue("getChannelCutoutOpacity", 1) == 0 or \
+                shmat.getValue("getChannelOpacity", 1) == 0:
             print("Invisible shell %s for %s" % (shname, self.material.name))
-
-            return None
+            return
 
         nname = f"{shname}_{self.material.name}"
 
@@ -195,6 +201,7 @@ class CyclesShader(CyclesStatic):
 
         return node
 
+    # ShaderGraph
     def build(self):
         self._build_shader()
         if self.easy_shader:
@@ -202,12 +209,13 @@ class CyclesShader(CyclesStatic):
             return
 
         self._build_layer()
-        self.buildCutout()
+        self._build_cutout()
         self.buildVolume()
         self.buildDisplacementNodes()
         self._build_shells()
         self.buildOutput()
 
+    # ShaderGraph
     def _easy_build(self):
         graph = self.shader_graph
 
@@ -230,24 +238,24 @@ class CyclesShader(CyclesStatic):
 
         # _get_glossy_color
         # _get_translucent_color
-        # getRefractionColor
+        # _get_refraction_color
 
-    # 1
+    # ShaderGraph 1
     def _build_shells(self):
         shells = []
-        n = 0
+        i = 0
 
         for shell in self.material.shells.values():
             for geonode in shell.geometry.nodes.values():
-                shells.append((geonode.push, n, shell))
-                n += 1
+                shells.append((geonode.push, i, shell))
+                i += 1
 
         shells.sort()
 
         if shells:
             self.column += 1
 
-        for push, n, shell in shells:
+        for push, i, shell in shells:
             node = self._add_shell_group(shell, push)
             if not node:
                 continue
@@ -265,7 +273,7 @@ class CyclesShader(CyclesStatic):
             self.displacement = node.outputs["Displacement"]
             self.ycoords[self.column] -= 50
 
-    # 8
+    # ShaderGraph 8
     def _build_layer(self, uvname=''):
         self._build_normal(uvname)
         self._build_bump()
@@ -285,14 +293,14 @@ class CyclesShader(CyclesStatic):
             self._build_dual_lobe()
 
         if self.material.refractive:
-            self.buildRefraction()
+            self._build_refraction()
 
         self._build_top_coat()
         self._build_emission()
 
         return self.cycles
 
-    # 4
+    # ShaderGraph 4
     def _build_shader(self, slot="UV"):
         mat = self.material.rna
         if not mat:
@@ -301,12 +309,13 @@ class CyclesShader(CyclesStatic):
         mat.use_nodes = True
         mat.node_tree.nodes.clear()
         self.set_material(mat)
+
         if self.easy_shader:
             return
 
         return self._add_texco(slot)
 
-    # 4
+    # Node 4
     def _add_texco(self, slot):
         if self.easy_shader:
             return
@@ -324,64 +333,72 @@ class CyclesShader(CyclesStatic):
         kx = self.getValue("getChannelHorizontalTiles", 1)
         ky = self.getValue("getChannelVerticalTiles", 1)
 
-        self._map_texco(ox, oy, kx, ky)
+        self._set_texco(ox, oy, kx, ky)
 
         for key, uvset in self.material.uv_sets.items():
             self._add_uv_node(key, uvset.name)
 
         return node
-    # 2
 
+    # ShaderGraph 2
     def _add_uv_node(self, key, uvname):
         node = self.add_node("ShaderNodeUVMap", 1)
         node.uv_map = uvname
+
         self.texcos[key] = node.outputs["UV"]
 
-    # 2
-    def _map_texco(self, ox, oy, kx, ky):
-        if ox != 0 or oy != 0 or kx not in [0, 1] or ky not in [0, 1]:
-            sx = sy = 1
-            dx = dy = 0
+    # ShaderGraph 2
+    def _set_texco(self, ox, oy, kx, ky):
+        if not(ox != 0 or oy != 0 or kx not in [0, 1] or ky not in [0, 1]):
+            return
 
-            if kx != 0:
-                sx = 1/kx
-                dx = -ox/kx
+        sx = sy = 1
+        dx = dy = 0
 
-            if ky != 0:
-                sy = 1/ky
-                dy = oy/ky
+        if kx != 0:
+            sx = 1/kx
+            dx = -ox/kx
 
-            mapping = self._add_mapping_node((dx, dy, sx, sy, 0), None)
-            if not mapping:
-                return
+        if ky != 0:
+            sy = 1/ky
+            dy = oy/ky
 
-            self.linkVector(self.texco, mapping, 0)
-            self.texco = mapping
+        mapping = self._get_mapping_node((dx, dy, sx, sy, 0), None)
 
-    def _add_mapping_node(self, data, map) -> ShaderNodeMapping:
+        if not mapping:
+            return
+
+        self._link_vector(self.texco, mapping, 0)
+        self.texco = mapping
+
+    # Node 2
+    def _get_mapping_node(self, data, map_) -> ShaderNodeMapping:
         dx, dy, sx, sy, rz = data
 
-        if (sx != 1 or sy != 1 or dx != 0 or dy != 0 or rz != 0):
-            mapping = self.add_node("ShaderNodeMapping", 1)
-            mapping.vector_type = 'TEXTURE'
+        if not (sx != 1 or sy != 1 or dx != 0 or dy != 0 or rz != 0):
+            return
 
-            if hasattr(mapping, "translation"):
-                mapping.translation = (dx, dy, 0)
-                mapping.scale = (sx, sy, 1)
-                if rz != 0:
-                    mapping.rotation = (0, 0, rz)
-            else:
-                mapping.inputs['Location'].default_value = (dx, dy, 0)
-                mapping.inputs['Scale'].default_value = (sx, sy, 1)
-                if rz != 0:
-                    mapping.inputs['Rotation'].default_value = (0, 0, rz)
+        mapping = self.add_node("ShaderNodeMapping", 1)
+        mapping.vector_type = 'TEXTURE'
 
-            if map and not map.invert and hasattr(mapping, "use_min"):
-                mapping.use_min = mapping.use_max = 1
+        if hasattr(mapping, "translation"):
+            mapping.translation = (dx, dy, 0)
+            mapping.scale = (sx, sy, 1)
 
-            return mapping
-        return None
+            if rz != 0:
+                mapping.rotation = (0, 0, rz)
+        else:
+            mapping.inputs['Location'].default_value = (dx, dy, 0)
+            mapping.inputs['Scale'].default_value = (sx, sy, 1)
+            if rz != 0:
+                mapping.inputs['Rotation'].default_value = (0, 0, rz)
 
+        if map_ and not map_.invert and hasattr(mapping, "use_min"):
+            mapping.use_min = mapping.use_max = 1
+
+        return mapping
+
+    # ShaderGraph 3
     def _build_normal(self, uvname):
         if not self.is_enabled("Normal"):
             return
@@ -391,6 +408,7 @@ class CyclesShader(CyclesStatic):
         if strength > 0 and tex:
             self._build_normal_map(strength, tex, uvname)
 
+    # ShaderGraph / Node 2
     def _build_normal_map(self, strength, tex, uvname):
         self.normal = self.add_node("ShaderNodeNormalMap", col=3)
         self.normal.space = "TANGENT"
@@ -403,6 +421,7 @@ class CyclesShader(CyclesStatic):
         self.normal.inputs["Strength"].default_value = strength
         self.link(tex.outputs[0], self.normal.inputs["Color"])
 
+    # 4
     def _build_bump(self):
         if not self.is_enabled("Bump"):
             return
@@ -448,7 +467,7 @@ class CyclesShader(CyclesStatic):
         oy = Settings.scale_*self.getValue(["Detail Vertical Offset"], 0)
         kx = self.getValue(["Detail Horizontal Tiles"], 1)
         ky = self.getValue(["Detail Vertical Tiles"], 1)
-        self._map_texco(ox, oy, kx, ky)
+        self._set_texco(ox, oy, kx, ky)
 
         strength, tex = self._get_color_tex(["Detail Normal Map"], "NONE", 1.0)
         weight = weight*strength
@@ -532,7 +551,7 @@ class CyclesShader(CyclesStatic):
                 ["Detail Specular Roughness Mult"], "NONE", 0, False)
             roughness *= detrough
             roughtex = self.multiplyTexs(dettex, roughtex)
-        self.setRoughness(node, "Roughness", roughness, roughtex)
+        self._set_roughness(node, "Roughness", roughness, roughtex)
         self._link_bump_normal(node)
         Settings.usedFeatures_["Diffuse"] = True
 
@@ -566,7 +585,7 @@ class CyclesShader(CyclesStatic):
         roughness, roughtex = self._get_color_tex(
             ["Diffuse Overlay Roughness"], "NONE", 0, False)
 
-        self.setRoughness(node, "Roughness", roughness, roughtex)
+        self._set_roughness(node, "Roughness", roughness, roughtex)
 
         self._link_bump_normal(node)
         self.__mix_with_active(weight**power, wttex, node)
@@ -597,7 +616,7 @@ class CyclesShader(CyclesStatic):
             channel = channel[0]
 
         if useTex:
-            tex = self.addTexImageNode(channel, colorSpace)
+            tex = self._get_tex_image_node(channel, colorSpace)
         else:
             tex = None
 
@@ -687,18 +706,18 @@ class CyclesShader(CyclesStatic):
             lobe2mult = self.getValue(["Specular Lobe 2 Roughness Mult"], 1.0)
             duallobemult = self.getValue(
                 ["Dual Lobe Specular Roughness Mult"], 1.0)
-            self.setRoughness(node, "Roughness 1",
+            self._set_roughness(node, "Roughness 1",
                               roughness*duallobemult, roughtex)
-            self.setRoughness(node, "Roughness 2", roughness *
+            self._set_roughness(node, "Roughness 2", roughness *
                               duallobemult*lobe2mult, roughtex)
             ratio = 1 - ratio
         else:
             roughness1, roughtex1 = self._get_color_tex(
                 ["Specular Lobe 1 Roughness"], "NONE", 0.0, False)
-            self.setRoughness(node, "Roughness 1", roughness1, roughtex1)
+            self._set_roughness(node, "Roughness 1", roughness1, roughtex1)
             roughness2, roughtex2 = self._get_color_tex(
                 ["Specular Lobe 2 Roughness"], "NONE", 0.0, False)
-            self.setRoughness(node, "Roughness 2", roughness2, roughtex2)
+            self._set_roughness(node, "Roughness 2", roughness2, roughtex2)
 
         self._link_bump_normal(node)
         self.__mix_with_active(ratio, None, node, keep=True)
@@ -712,7 +731,7 @@ class CyclesShader(CyclesStatic):
             "getChannelGlossyColor", "COLOR", ColorStatic.WHITE, False)
 
         if tex and strtex:
-            tex = self.mixTexs('MULTIPLY', tex, strtex)
+            tex = self._mix_texs('MULTIPLY', tex, strtex)
         elif strtex:
             tex = strtex
 
@@ -987,7 +1006,7 @@ class CyclesShader(CyclesStatic):
 
     def sumColors(self, color, tex, color2, tex2):
         if tex and tex2:
-            tex = self.mixTexs('ADD', tex, tex2)
+            tex = self._mix_texs('ADD', tex, tex2)
         elif tex2:
             tex = tex2
         color = Vector(color) + Vector(color2)
@@ -995,13 +1014,14 @@ class CyclesShader(CyclesStatic):
 
     def multiplyColors(self, color, tex, color2, tex2):
         if tex and tex2:
-            tex = self.mixTexs('MULTIPLY', tex, tex2)
+            tex = self._mix_texs('MULTIPLY', tex, tex2)
         elif tex2:
             tex = tex2
         color = self._comp_prod(color, color2)
         return color, tex
-
-    def getRefractionColor(self):
+    
+    # MaterialData
+    def _get_refraction_color(self):
         if self.material.shareGlossy:
             color, tex = self._get_color_tex(
                 "getChannelGlossyColor", "COLOR", ColorStatic.WHITE)
@@ -1014,59 +1034,85 @@ class CyclesShader(CyclesStatic):
                 ["Refraction Roughness"], "NONE", 0, False, maxval=1)
         return color, tex, roughness, roughtex
 
-    def addInput(self, node, channel, slot, colorSpace, default, maxval=0):
-        value, tex = self._get_color_tex(
-            channel, colorSpace, default, maxval=maxval)
-        if VectorStatic.is_vector(default):
-            node.inputs[slot].default_value[0:3] = value
-        else:
-            node.inputs[slot].default_value = value
-        if tex:
-            self.link(tex.outputs[0], node.inputs[slot])
-        return value, tex
+    # def addInput(self, node, channel, slot, colorSpace, default, maxval=0):
+    #     value, tex = self._get_color_tex(
+    #         channel, colorSpace, default, maxval=maxval)
+        
+    #     if VectorStatic.is_vector(default):
+    #         node.inputs[slot].default_value[0:3] = value
+    #     else:
+    #         node.inputs[slot].default_value = value
+        
+    #     if tex:
+    #         self.link(tex.outputs[0], node.inputs[slot])
 
-    def setRoughness(self, node, slot, roughness, roughtex, square=True):
-        node.inputs[slot].default_value = roughness
-        if roughtex:
-            tex = self.multiplyScalarTex(roughness, roughtex)
-            if tex:
-                self.link(tex.outputs[0], node.inputs[slot])
+    #     return value, tex
+    
+    # Node
+    def _set_roughness(self, node, slot, roughness, roughtex, square=True):
+        node.inputs[slot].default_value = roughness        
+        if not roughtex:
+            return roughness
+
+        tex = self.multiplyScalarTex(roughness, roughtex)
+        
+        if not tex:
+            return roughness
+
+        self.link(tex.outputs[0], node.inputs[slot])
+
         return roughness
+    
+    # ShaderGraph
+    def _build_refraction(self):
+        from daz_import.Elements.ShaderGroup import FakeCausticsShaderGroup
 
-    def buildRefraction(self):
         weight, wttex = self._get_color_tex(
             "getChannelRefractionWeight", "NONE", 0.0)
+        
         if weight == 0:
             return
-        node, color = self.buildRefractionNode()
-        self.__mix_with_active(weight, wttex, node)
-        if Settings.useFakeCaustics and not self.material.thinWall:
-            from daz_import.Elements.ShaderGroup import FakeCausticsShaderGroup
-            self.column += 1
-            node = self.add_group(FakeCausticsShaderGroup, "DAZ Fake Caustics", args=[
-                color], force=True)
-            self.__mix_with_active(weight, wttex, node, keep=True)
 
-    def buildRefractionNode(self):
+        node, color = self._get_refraction_node()
+        self.__mix_with_active(weight, wttex, node)
+
+        if not(Settings.useFakeCaustics and not self.material.thinWall):
+            return
+        
+        self.column += 1
+
+        node = self.add_group(FakeCausticsShaderGroup, "DAZ Fake Caustics", args=[
+            color], force=True)
+
+        self.__mix_with_active(weight, wttex, node, keep=True)
+    
+    # Node
+    def _get_refraction_node(self):
         from daz_import.Elements.ShaderGroup import RefractionShaderGroup
         self.column += 1
+        
         node = self.add_group(RefractionShaderGroup,
                               "DAZ Refraction", size=150)
         node.width = 240
 
         color, tex = self._get_color_tex(
             "getChannelGlossyColor", "COLOR", ColorStatic.WHITE)
+        
         roughness, roughtex = self._get_color_tex(
             "getChannelGlossyRoughness", "NONE", 0, False, maxval=1)
         roughness = roughness**2
+
         self.link_color(tex, node, color, "Glossy Color")
         self.link_scalar(roughtex, node, roughness, "Glossy Roughness")
 
-        color, coltex, roughness, roughtex = self.getRefractionColor()
+        color, coltex, roughness, roughtex = self._get_refraction_color()
         ior, iortex = self._get_color_tex("getChannelIOR", "NONE", 1.45)
+        
         roughness = roughness**2
+
         self.link_color(coltex, node, color, "Refraction Color")
         self.link_scalar(iortex, node, ior, "Fresnel IOR")
+        
         if self.material.thinWall:
             node.inputs["Thin Wall"].default_value = 1
             node.inputs["Refraction IOR"].default_value = 1.0
@@ -1077,76 +1123,97 @@ class CyclesShader(CyclesStatic):
             self.link_scalar(roughtex, node, roughness, "Refraction Roughness")
             self.link_scalar(iortex, node, ior, "Refraction IOR")
             self.material.setTransSettings(True, False, color, 0.2)
+        
         self._link_bump_normal(node)
         return node, color
+    
+    # ShaderGraph
+    def _build_cutout(self):
+        from daz_import.Elements.ShaderGroup import TransparentShaderGroup
 
-    def buildCutout(self):
         alpha, tex = self._get_color_tex(
             "getChannelCutoutOpacity", "NONE", 1.0)
+        
+        if not(alpha < 1 or tex):
+            return
+
+        self.column += 1
+        self.useCutout = True
+
+        if alpha == 0:
+            node = self.add_node("ShaderNodeBsdfTransparent")
+            self.cycles = node
+            self.eevee = node
+            tex = None
+        else:            
+            node = self.add_group(
+                TransparentShaderGroup, "DAZ Transparent")
+            self.__mix_with_active(alpha, tex, node)
+
+        node.inputs["Color"].default_value[0:3] = ColorStatic.WHITE
+        
         if alpha < 1 or tex:
-            self.column += 1
-            self.useCutout = True
-            if alpha == 0:
-                node = self.add_node("ShaderNodeBsdfTransparent")
-                self.cycles = node
-                self.eevee = node
-                tex = None
-            else:
-                from daz_import.Elements.ShaderGroup import TransparentShaderGroup
-                node = self.add_group(
-                    TransparentShaderGroup, "DAZ Transparent")
-                self.__mix_with_active(alpha, tex, node)
-            node.inputs["Color"].default_value[0:3] = ColorStatic.WHITE
-            if alpha < 1 or tex:
-                self.material.setTransSettings(
-                    False, False, ColorStatic.WHITE, alpha)
-            Settings.usedFeatures_["Transparent"] = True
+            self.material.setTransSettings(
+                False, False, ColorStatic.WHITE, alpha)
 
-    # -------------------------------------------------------------
-    #   Emission
-    # -------------------------------------------------------------
+        Settings.usedFeatures_["Transparent"] = True
 
+    
+    # Any
     def _build_emission(self):
+        from daz_import.Elements.ShaderGroup import EmissionShaderGroup
+
         if not Settings.useEmission:
             return
-        color = self.get_color("getChannelEmissionColor", ColorStatic.BLACK)
-        if not ColorStatic.isBlack(color):
-            from daz_import.Elements.ShaderGroup import EmissionShaderGroup
-            self.column += 1
-            emit = self.add_group(EmissionShaderGroup, "DAZ Emission")
-            self.addEmitColor(emit, "Color")
-            strength = self.getLuminance(emit)
-            emit.inputs["Strength"].default_value = strength
-            self.link(self.cycles_socket(), emit.inputs["Cycles"])
-            self.link(self.eevee_socket(), emit.inputs["Eevee"])
-            self.cycles = self.eevee = emit
-            self.addOneSided()
 
-    def addEmitColor(self, emit, slot):
+        color = self.get_color("getChannelEmissionColor", ColorStatic.BLACK)
+
+        if ColorStatic.isBlack(color):
+            return
+
+        self.column += 1
+        emit = self.add_group(EmissionShaderGroup, "DAZ Emission")
+        self._add_emit_color(emit, "Color")
+
+        strength = self._get_luminance(emit)
+
+        emit.inputs["Strength"].default_value = strength
+        self.link(self.cycles_socket(), emit.inputs["Cycles"])
+        self.link(self.eevee_socket(), emit.inputs["Eevee"])
+        self.cycles = self.eevee = emit
+        self._set_one_sided()
+
+    # Node
+    def _add_emit_color(self, emit_node, slot):
         color, tex = self._get_color_tex(
             "getChannelEmissionColor", "COLOR", ColorStatic.BLACK)
         if tex is None:
             _, tex = self._get_color_tex(
                 ["Luminance"], "COLOR", ColorStatic.BLACK)
         temp = self.getValue(["Emission Temperature"], None)
+
         if temp is None:
-            self.link_color(tex, emit, color, slot)
+            self.link_color(tex, emit_node, color, slot)
             return
         elif temp == 0:
             temp = 6500
+
         blackbody = self.add_node("ShaderNodeBlackbody", self.column-2)
         blackbody.inputs["Temperature"].default_value = temp
+
         if ColorStatic.isWhite(color) and tex is None:
-            self.link(blackbody.outputs["Color"], emit.inputs[slot])
+            self.link(blackbody.outputs["Color"], emit_node.inputs[slot])
         else:
             mult = self.add_node("ShaderNodeMixRGB", self.column-1)
             mult.blend_type = 'MULTIPLY'
             mult.inputs[0].default_value = 1
+
             self.link(blackbody.outputs["Color"], mult.inputs[1])
             self.link_color(tex, mult, color, 2)
-            self.link(mult.outputs[0], emit.inputs[slot])
+            self.link(mult.outputs[0], emit_node.inputs[slot])
 
-    def getLuminance(self, emit):
+    # Node / Material
+    def _get_luminance(self, emit: ShaderNode):
         lum = self.getValue(["Luminance"], 1500)
         # "cd/m^2", "kcd/m^2", "cd/ft^2", "cd/cm^2", "lm", "W"
         units = self.getValue(["Luminance Units"], 3)
@@ -1158,15 +1225,20 @@ class CyclesShader(CyclesStatic):
                 strength *= self.getValue(["Luminous Efficacy"], 1)
         return strength
 
-    def addOneSided(self):
+    # Node 
+    def _set_one_sided(self):
+        from daz_import.Elements.ShaderGroup import OneSidedShaderGroup
+
         twosided = self.getValue(["Two Sided Light"], False)
-        if not twosided:
-            from daz_import.Elements.ShaderGroup import OneSidedShaderGroup
-            node = self.add_group(OneSidedShaderGroup,
-                                  "DAZ VectorStatic.one-Sided")
-            self.link(self.cycles_socket(), node.inputs["Cycles"])
-            self.link(self.eevee_socket(), node.inputs["Eevee"])
-            self.cycles = self.eevee = node
+        if twosided:
+            return
+        
+        node = self.add_group(OneSidedShaderGroup,
+                                "DAZ VectorStatic.one-Sided")
+        self.link(self.cycles_socket(), node.inputs["Cycles"])
+        self.link(self.eevee_socket(), node.inputs["Eevee"])
+
+        self.cycles = self.eevee = node
 
     # -------------------------------------------------------------
     #   Volume
@@ -1288,49 +1360,63 @@ class CyclesShader(CyclesStatic):
 
     def buildDisplacementNodes(self):
         channel = self.material.getChannelDisplacement()
+
         if not(channel and
                 self.is_enabled("Displacement") and
                 Settings.useDisplacement):
             return
-        tex = self.addTexImageNode(channel, "NONE")
-        if tex:
-            strength = self.material.getChannelValue(channel, 1)
-            if strength == 0:
-                return
-            dmin = self.getValue("getChannelDispMin", -0.05)
-            dmax = self.getValue("getChannelDispMax", 0.05)
-            if dmin > dmax:
-                tmp = dmin
-                dmin = dmax
-                dmax = tmp
 
-            from daz_import.Elements.ShaderGroup import DisplacementShaderGroup
-            node = self.add_group(DisplacementShaderGroup, "DAZ Displacement")
-            self.link(tex.outputs[0], node.inputs["Texture"])
-            node.inputs["Strength"].default_value = strength
-            node.inputs["Max"].default_value = Settings.scale_ * dmax
-            node.inputs["Min"].default_value = Settings.scale_ * dmin
-            self._link_normal(node)
-            self.displacement = node.outputs["Displacement"]
-            mat = self.material.rna
-            mat.cycles.displacement_method = 'BOTH'
+        tex = self._get_tex_image_node(channel, "NONE")
+        if not tex:
+            return
+
+        strength = self.material.getChannelValue(channel, 1)
+        if strength == 0:
+            return
+        dmin = self.getValue("getChannelDispMin", -0.05)
+        dmax = self.getValue("getChannelDispMax", 0.05)
+
+        if dmin > dmax:
+            tmp = dmin
+            dmin = dmax
+            dmax = tmp
+
+        from daz_import.Elements.ShaderGroup import DisplacementShaderGroup
+        node = self.add_group(DisplacementShaderGroup, "DAZ Displacement")
+        self.link(tex.outputs[0], node.inputs["Texture"])
+
+        node.inputs["Strength"].default_value = strength
+        node.inputs["Max"].default_value = Settings.scale_ * dmax
+        node.inputs["Min"].default_value = Settings.scale_ * dmin
+
+        self._link_normal(node)
+        self.displacement = node.outputs["Displacement"]
+
+        mat = self.material.rna
+        mat.cycles.displacement_method = 'BOTH'
 
     def addSingleTexture(self, col, asset, map, colorSpace):
         isnew = False
+
         img = asset.buildCycles(colorSpace)
+
         if img:
             imgname = img.name
         else:
             imgname = asset.getName()
+
         hasMap = asset.hasMapping(map)
-        texnode = self.getTexNode(imgname, colorSpace)
+        texnode = self._get_tex_node_(imgname, colorSpace)
+
         if not hasMap and texnode:
             return texnode, False
-        else:
-            texnode = self.addTextureNode(col, img, imgname, colorSpace)
-            isnew = True
-            if not hasMap:
-                self.setTexNode(imgname, texnode, colorSpace)
+
+        texnode = self.addTextureNode(col, img, imgname, colorSpace)
+        isnew = True
+
+        if not hasMap:
+            self._set_tex_node__(imgname, texnode, colorSpace)
+
         return texnode, isnew
 
     def addTextureNode(self, col, img, imgname, colorSpace) -> ShaderNodeTexImage:
@@ -1340,7 +1426,7 @@ class CyclesShader(CyclesStatic):
         node.interpolation = Settings.imageInterpolation
         node.label = imgname.rsplit("/", 1)[-1]
 
-        self.setColorSpace(node, colorSpace)
+        self._set_color_space(node, colorSpace)
         node.name = imgname
 
         if hasattr(node, "image_user"):
@@ -1348,31 +1434,39 @@ class CyclesShader(CyclesStatic):
             node.image_user.frame_current = 1
 
         return node
-
+    
+    # Node
     @staticmethod
-    def setColorSpace(node, colorSpace):
+    def _set_color_space(node, colorSpace):
         if hasattr(node, "color_space"):
             node.color_space = colorSpace
 
-    def addImageTexNode(self, filepath: str, tname, col) -> ShaderNodeTexImage:
+    def add_image_tex_node(self, filepath: str, tname, col) -> ShaderNodeTexImage:
         img = bpy.data.images.load(filepath)
         img.name = os.path.splitext(os.path.basename(filepath))[0]
         img.colorspace_settings.name = "Non-Color"
+
         return self.addTextureNode(col, img, tname, "NONE")
 
-    def getTexNode(self, key, colorSpace):
-        if key in self.texnodes.keys():
-            for texnode, colorSpace1 in self.texnodes[key]:
-                if colorSpace1 == colorSpace:
-                    return texnode
+    # ShaderNodeGroup
+    def _get_tex_node_(self, key, colorSpace):
+        list_ = self.texnodes.get(key, [])
+
+        for texnode, colorSpace1 in list_:
+            if colorSpace1 == colorSpace:
+                return texnode
+
         return None
 
-    def setTexNode(self, key, texnode, colorSpace):
+    # ShaderNodeGroup
+    def _set_tex_node__(self, key, texnode, colorSpace):
         if key not in self.texnodes.keys():
             self.texnodes[key] = []
-        self.texnodes[key].append((texnode, colorSpace))
 
-    def linkVector(self, texco, node, slot="Vector"):
+        self.texnodes[key].append((texnode, colorSpace))
+    
+    # Node
+    def _link_vector(self, texco, node, slot="Vector"):
         if not texco:
             return
 
@@ -1386,7 +1480,8 @@ class CyclesShader(CyclesStatic):
         else:
             self.link(texco.outputs["UV"], node.inputs[slot])
 
-    def addTexImageNode(self, channel, colorSpace=None):
+    # ShaderGraph / Node
+    def _get_tex_image_node(self, channel, colorSpace=None):
         col = self.column-2
         textures, maps = self.material.getTextures(channel)
 
@@ -1399,7 +1494,7 @@ class CyclesShader(CyclesStatic):
             texnode, isnew = self.addSingleTexture(
                 col, textures[0], maps[0], colorSpace)
             if isnew:
-                self.linkVector(self.texco, texnode)
+                self._link_vector(self.texco, texnode)
             return texnode
 
         from daz_import.Elements.ShaderGroup import LieShaderGroup
@@ -1414,15 +1509,16 @@ class CyclesShader(CyclesStatic):
 
         group = LieShaderGroup()
         group.create(node, name, self)
-        self.linkVector(self.texco, node)
+        self._link_vector(self.texco, node)
         group.addTextureNodes(textures, maps, colorSpace)
 
         node.inputs["Alpha"].default_value = 1
         self.liegroups.append(node)
 
         return node
-
-    def mixTexs(self, op, tex1, tex2, slot1=0, slot2=0, color1=None, color2=None, fac=1, factex=None):
+    
+    # Node
+    def _mix_texs(self, op, tex1, tex2, slot1=0, slot2=0, color1=None, color2=None, fac=1, factex=None):
 
         if fac < 1 or factex:
             pass
@@ -1453,6 +1549,7 @@ class CyclesShader(CyclesStatic):
 
         return mix
 
+    # ShaderGraph
     def __mix_with_active(self, fac, tex, shader, useAlpha=False, keep=False):
         if shader.type != 'GROUP':
             raise RuntimeError("BUG: __mix_with_active", shader.type)
@@ -1475,7 +1572,8 @@ class CyclesShader(CyclesStatic):
                 "Cycles", self.cycles, self.cycles_socket(), fac, tex, shader, useAlpha)
 
         self.cycles = shader
-
+    
+    # Node
     def __make_active_mix(self, slot, active, socket, fac, tex, shader, useAlpha):
         self.link(socket, shader.inputs[slot])
         shader.inputs["Fac"].default_value = fac
@@ -1490,7 +1588,7 @@ class CyclesShader(CyclesStatic):
 
         self.link(texsocket, shader.inputs["Fac"])
 
-    # NODE
+    # Node
     def link_color(self, tex, node, color, slot=0):
         node.inputs[slot].default_value[0:3] = color
 
@@ -1514,11 +1612,18 @@ class CyclesShader(CyclesStatic):
     def add_slot(self, channel, node, slot, value, value0, invert):
         node.inputs[slot].default_value = value
 
-        tex = self.addTexImageNode(channel, "NONE")
-        if tex:
-            tex = self._fix_tex(tex, value0, invert)
-            if tex:
-                self.link(tex.outputs[0], node.inputs[slot])
+        tex = self._get_tex_image_node(channel, "NONE")
+        
+        if not tex:
+            return tex
+        
+        tex = self._fix_tex(tex, value0, invert)
+        
+        if not tex:
+            return tex
+
+        self.link(tex.outputs[0], node.inputs[slot])
+
         return tex
 
     def _fix_tex(self, tex, value, invert):
@@ -1562,7 +1667,8 @@ class CyclesShader(CyclesStatic):
 
         self.link(tex.outputs[0], mix.inputs[2])
         return mix
-
+    
+    # Node
     def multiplyScalarTex(self, value, tex, slot=0, col=None):
         if value == 1:
             return tex
@@ -1570,12 +1676,15 @@ class CyclesShader(CyclesStatic):
             return None
         elif (tex and tex.type not in ['TEX_IMAGE', 'GROUP']):
             return tex
+
         if col is None:
             col = self.column-1
+
         mult = self.add_node("ShaderNodeMath", col)
         mult.operation = 'MULTIPLY'
         mult.inputs[0].default_value = value
         self.link(tex.outputs[slot], mult.inputs[1])
+
         return mult
 
     def multiplyAddScalarTex(self, factor, term, tex, slot=0, col=None):

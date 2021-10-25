@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 
 import math
@@ -284,7 +285,7 @@ class GeoNode(Node):
 
             if keep:
                 return mat
-            
+
             nmat = mat.copy()
 
             for node in nmat.node_tree.nodes:
@@ -333,7 +334,7 @@ class GeoNode(Node):
         if ob.data is None:
             return
         ob.data.DazVertexCount = self.data.vertex_count
-        
+
         if self.data.hidden_polys:
             hgroup = ob.data.DazMaskGroup
 
@@ -343,7 +344,7 @@ class GeoNode(Node):
 
         if self.data.vertex_pairs:
             ggroup = ob.data.DazGraftGroup
-            
+
             for vn, pvn in self.data.vertex_pairs:
                 pair = ggroup.add()
                 pair.a = vn
@@ -481,7 +482,7 @@ class Geometry(Asset):
     def __init__(self, fileref):
         super().__init__(fileref)
         self.type = None
-        
+
         self.channelsData: Channels = Channels(self)
 
         self.instances = self.nodes = {}
@@ -499,7 +500,7 @@ class Geometry(Asset):
         self.material_group_vis = {}
 
         self.material_selection_sets = []
-        
+
         self.isStrandHair = False
         self.vertex_count = 0
         self.poly_count = 0
@@ -655,7 +656,7 @@ class Geometry(Asset):
         output.location = (200, 0)
 
         tree.link(node.outputs["BSDF"], output.inputs["Surface"])
-        
+
         return mat
 
     def preprocess(self, context, inst):
@@ -994,8 +995,9 @@ class Geometry(Asset):
                     vert = rgroup.mask_vertices.add()
                     vert.a = vn
 
-    def makeShell(self, shname, shmat: Asset, uv):
+    def makeShell(self, shname, shmat: Asset, uv) -> Shell:
         first = False
+
         if shname not in self.shells.keys():
             first = True
             self.shells[shname] = []
@@ -1005,9 +1007,8 @@ class Geometry(Asset):
         for shell in self.shells[shname]:
             if shmat.channelsData.equal(shell.material.channelsData):
                 if uv == shell.uv:
-                    return shell
-                else:
-                    match = shell
+                    return shell                
+                match = shell
 
         if not match:
             for shell in self.shells[shname]:
@@ -1326,7 +1327,7 @@ class DAZ_OT_UDimsFromTextures(DazOperator):
 
         for uvloop in ob.data.uv_layers:
             m = 0
-            for fn, f in enumerate(ob.data.polygons):
+            for _, f in enumerate(ob.data.polygons):
                 udim, vdim = dims[f.material_index]
                 for _ in f.vertices:
                     uvs = uvloop.data[m].uv

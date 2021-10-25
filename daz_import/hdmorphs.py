@@ -131,9 +131,11 @@ class DispGroup(ShaderGroup):
 
     def addNodes(self, args):
         from daz_import.driver import makePropDriver
+
         last = None
+
         for ob, amt, sname, prop, filepath in args:
-            tex = self.addImageTexNode(filepath, sname, 1)
+            tex = self.add_image_tex_node(filepath, sname, 1)
             self.link(self.inputs.outputs["UV"], tex.inputs["Vector"])
 
             disp = self.addDispNode(sname, tex)
@@ -433,7 +435,7 @@ class NormalAdder:
             if not os.path.exists(filepath):
                 print("No such file: %s" % filepath)
                 continue
-            tex = shader.addImageTexNode(filepath, fname, -1)
+            tex = shader.add_image_tex_node(filepath, fname, -1)
             shader.link(texco.outputs["UV"], tex.inputs["Vector"])
 
             mix = shader.add_group(MixNormalTextureGroup,

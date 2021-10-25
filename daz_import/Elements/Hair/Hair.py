@@ -186,7 +186,7 @@ class HairShader(CyclesShader):
         return src
 
     @staticmethod
-    def setRoughness(diffuse, rough):
+    def _set_roughness(diffuse, rough):
         diffuse.inputs["Roughness"].default_value = rough
 
     def mixSockets(self, socket1, socket2, weight):
@@ -322,7 +322,7 @@ class HairBSDFShader(HairShader):
             weight = self.getValue(["Glossy Layer Weight"], 0.5)
             self.active = self.mixShaders(trans, refl, weight)
         # self.buildAnisotropic()
-        self.buildCutout()
+        self._build_cutout()
         self.buildOutput()
 
     def buildTransmission(self):
@@ -368,7 +368,7 @@ class HairBSDFShader(HairShader):
             self.column += 1
             self.active = self.addShaders(self.active, node)
 
-    def buildCutout(self):
+    def _build_cutout(self):
         # Cutout
         alpha = self.getValue(["Cutout Opacity"], 1)
         if alpha < 1:
