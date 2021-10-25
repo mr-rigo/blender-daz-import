@@ -46,7 +46,7 @@ class PBRShader(CyclesShader):
 
         if self.material.dualLobeWeight > 0:
             self._build_dual_lobe()
-            self.replaceSlot(self.pbr, "Specular", 0)
+            self._replace_slot(self.pbr, "Specular", 0)
             self.postPBR = True
 
         if self.material.refractive:
@@ -236,7 +236,7 @@ class PBRShader(CyclesShader):
 
         if channel:
             value, tex = self._get_color_tex("getChannelOpacity", "NONE", 1.0)
-            invtex = self.fixTex(tex, value, True)
+            invtex = self._fix_tex(tex, value, True)
             return 1-value, invtex
 
         return 1, None
@@ -262,7 +262,7 @@ class PBRShader(CyclesShader):
             else:
                 pbr = self.pbr
                 pbr2 = None
-                self.replaceSlot(pbr, "Transmission", weight)
+                self._replace_slot(pbr, "Transmission", weight)
 
             if self.material.thinWall:
                 from daz_import.Elements.ShaderGroup import RayClipShaderGroup
@@ -281,7 +281,7 @@ class PBRShader(CyclesShader):
             self.postPBR = True
         else:
             pbr = self.pbr
-            self.replaceSlot(pbr, "Transmission", weight)
+            self._replace_slot(pbr, "Transmission", weight)
 
         if self.material.thinWall:
             # if thin walled is on then there's no volume
@@ -291,14 +291,14 @@ class PBRShader(CyclesShader):
             #  principled clearcoat = (iray refraction index - 1) * 10 * iray glossy layered weight
             #  principled clearcoat roughness = 0
             self.material.setTransSettings(True, False, color, 0.1)
-            self.replaceSlot(pbr, "IOR", 1.0)
-            self.replaceSlot(pbr, "Roughness", 0.0)
+            self._replace_slot(pbr, "IOR", 1.0)
+            self._replace_slot(pbr, "Roughness", 0.0)
             strength, strtex = self._get_color_tex(
                 "getChannelGlossyLayeredWeight", "NONE", 1.0, False)
             clearcoat = (ior-1)*10*strength
-            self.removeLink(pbr, "Clearcoat")
+            self._remove_link(pbr, "Clearcoat")
             self.link_scalar(strtex, pbr, clearcoat, "Clearcoat")
-            self.replaceSlot(pbr, "Clearcoat Roughness", 0)
+            self._replace_slot(pbr, "Clearcoat Roughness", 0)
 
         else:
             # principled transmission = 1
@@ -313,21 +313,21 @@ class PBRShader(CyclesShader):
             if not (ColorStatic.isBlack(transcolor) or ColorStatic.isWhite(transcolor) or dist == 0.0):
                 coltex = self.mixTexs('MULTIPLY', coltex, transtex)
                 color = self._comp_prod(color, transcolor)
-            self.replaceSlot(pbr, "Metallic", 0)
-            self.replaceSlot(pbr, "Specular", 0.5)
-            self.removeLink(pbr, "IOR")
+            self._replace_slot(pbr, "Metallic", 0)
+            self._replace_slot(pbr, "Specular", 0.5)
+            self._remove_link(pbr, "IOR")
             self.link_scalar(iortex, pbr, ior, "IOR")
-            self.removeLink(pbr, "Roughness")
+            self._remove_link(pbr, "Roughness")
             self.setRoughness(pbr, "Roughness", roughness,
                               roughtex, square=False)
 
-        self.removeLink(pbr, "Base Color")
+        self._remove_link(pbr, "Base Color")
         self.link_color(coltex, pbr, color, "Base Color")
-        self.replaceSlot(pbr, "Subsurface", 0)
-        self.removeLink(pbr, "Subsurface Color")
+        self._replace_slot(pbr, "Subsurface", 0)
+        self._remove_link(pbr, "Subsurface Color")
         pbr.inputs["Subsurface Color"].default_value[0:3] = ColorStatic.WHITE
         if self.material.shareGlossy:
-            self.replaceSlot(pbr, "Specular Tint", 1.0)
+            self._replace_slot(pbr, "Specular Tint", 1.0)
 
     def mixShaders(self, weight, wttex, node1, node2):
         mix = self.add_node("ShaderNodeMixShader")

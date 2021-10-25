@@ -437,7 +437,7 @@ class DAZ_OT_MakeDecal(DazOperator, ImageFile, SingleFile, LaunchEditor, IsMesh)
                 if link.to_socket == link.to_node.inputs[slot]:
                     return link.from_socket, link.to_socket
 
-        nodes = shader.findNodes(nodeType)
+        nodes = shader.find_nodes(nodeType)
 
         if nodes:
             return None, nodes[0].inputs[slot]

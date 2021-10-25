@@ -1487,12 +1487,12 @@ class CyclesShader(CyclesStatic):
 
         tex = self.addTexImageNode(channel, "NONE")
         if tex:
-            tex = self.fixTex(tex, value0, invert)
+            tex = self._fix_tex(tex, value0, invert)
             if tex:
                 self.link(tex.outputs[0], node.inputs[slot])
         return tex
 
-    def fixTex(self, tex, value, invert):
+    def _fix_tex(self, tex, value, invert):
         _, tex = self.multiplySomeTex(value, tex)
         if invert:
             return self.invertTex(tex, 3)
@@ -1590,28 +1590,28 @@ class CyclesShader(CyclesStatic):
             self.diffuseTex.select = True
             self.shader_graph.nodes.active = self.diffuseTex
 
-    def getLink(self, node, slot):
+    def _get_link(self, node, slot):
         for link in self.links:
             if (link.to_node == node and
                     link.to_socket.name == slot):
                 return link
         return None
 
-    def removeLink(self, node, slot):
-        if link := self.getLink(node, slot):
+    def _remove_link(self, node, slot):
+        if link := self._get_link(node, slot):
             self.links.remove(link)
 
-    def replaceSlot(self, node, slot, value):
+    def _replace_slot(self, node, slot, value):
         node.inputs[slot].default_value = value
-        self.removeLink(node, slot)
+        self._remove_link(node, slot)
 
-    def findTexco(self, col):
-        if nodes := self.findNodes("TEX_COORD"):
+    def find_texco(self, col):
+        if nodes := self.find_nodes("TEX_COORD"):
             return nodes[0]
         else:
             return self.add_node("ShaderNodeTexCoord", col)
 
-    def findNodes(self, nodeType):
+    def find_nodes(self, nodeType):
         nodes = []
         for node in self.shader_graph.nodes.values():
             if node.type == nodeType:

@@ -201,7 +201,7 @@ class DispAdder:
 
         shader = CyclesShader.create_shader(mat)
 
-        texco = shader.findTexco(5)
+        texco = shader.find_texco(5)
 
         disp = self.addDispGroup(shader, args)
         disp.inputs["Midlevel"].default_value = self.midlevel
@@ -209,7 +209,7 @@ class DispAdder:
 
         shader.link(texco.outputs["UV"], disp.inputs["UV"])
 
-        for node in shader.findNodes("OUTPUT_MATERIAL"):
+        for node in shader.find_nodes("OUTPUT_MATERIAL"):
             shader.link(disp.outputs["Displacement"],
                              node.inputs["Displacement"])
         if self.usePrune:
@@ -404,7 +404,7 @@ class NormalAdder:
 
         shader = CyclesShader.create_shader(mat)
 
-        texco = shader.findTexco(1)
+        texco = shader.find_texco(1)
         shader.ycoords[-1] = shader.ycoords[0] = YSIZE*(2-row)
 
         normal = shader.findNode("NORMAL_MAP")
