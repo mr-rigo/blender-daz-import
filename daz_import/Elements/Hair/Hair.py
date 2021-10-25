@@ -118,7 +118,7 @@ class HairShader(CyclesShader):
         self.info = self.add_node('ShaderNodeHairInfo', col=1)
         #self.texco = self.info.outputs["Intercept"]
 
-    def buildOutput(self):
+    def _build_output(self):
         self.column += 1
         output = self.add_node('ShaderNodeOutputMaterial')
         self.link(self.active.outputs[0], output.inputs['Surface'])
@@ -306,7 +306,7 @@ class HairPBRShader(HairShader):
         pbr.inputs["Roughness"].default_value = 0.2
         pbr.inputs["Radial Roughness"].default_value = 0.8
         pbr.inputs["IOR"].default_value = 1.1
-        self.buildOutput()
+        self._build_output()
 
 
 class HairBSDFShader(HairShader):
@@ -323,7 +323,7 @@ class HairBSDFShader(HairShader):
             self.active = self.mixShaders(trans, refl, weight)
         # self.buildAnisotropic()
         self._build_cutout()
-        self.buildOutput()
+        self._build_output()
 
     def buildTransmission(self):
         root, roottex = self._get_color_tex(
@@ -393,7 +393,7 @@ class HairEeveeShader(HairShader):
         self.linkRamp(ramp, [self.roottex, self.tiptex], pbr, "Base Color")
         pbr.inputs["Metallic"].default_value = 0.9
         pbr.inputs["Roughness"].default_value = 0.2
-        self.buildOutput()
+        self._build_output()
 
 
 class Pinning:

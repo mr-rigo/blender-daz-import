@@ -210,10 +210,10 @@ class CyclesShader(CyclesStatic):
 
         self._build_layer()
         self._build_cutout()
-        self.buildVolume()
-        self.buildDisplacementNodes()
+        self._build_volume()
+        self._build_displacement_nodes()
         self._build_shells()
-        self.buildOutput()
+        self._build_output()
 
     # ShaderGraph
     def _easy_build(self):
@@ -867,7 +867,7 @@ class CyclesShader(CyclesStatic):
             glossiness, glosstex = self._get_color_tex(
                 ["Top Coat Glossiness"], "NONE", 1)
             roughness = 1 - glossiness**2
-            roughtex = self.invertTex(glosstex, 5)
+            roughtex = self._invert_tex(glosstex, 5)
 
         from daz_import.Elements.ShaderGroup import TopCoatShaderGroup
 
@@ -1003,7 +1003,8 @@ class CyclesShader(CyclesStatic):
         rad, radtex = self.sumColors(ssscolor, ssstex, trans, transtex)
         radius = rad * 2.0 * Settings.scale_
         return radius, radtex
-
+    
+    # Node
     def sumColors(self, color, tex, color2, tex2):
         if tex and tex2:
             tex = self._mix_texs('ADD', tex, tex2)
@@ -1011,14 +1012,15 @@ class CyclesShader(CyclesStatic):
             tex = tex2
         color = Vector(color) + Vector(color2)
         return color, tex
-
-    def multiplyColors(self, color, tex, color2, tex2):
-        if tex and tex2:
-            tex = self._mix_texs('MULTIPLY', tex, tex2)
-        elif tex2:
-            tex = tex2
-        color = self._comp_prod(color, color2)
-        return color, tex
+    
+    # # Node
+    # def multiplyColors(self, color, tex, color2, tex2):
+    #     if tex and tex2:
+    #         tex = self._mix_texs('MULTIPLY', tex, tex2)
+    #     elif tex2:
+    #         tex = tex2
+    #     color = self._comp_prod(color, color2)
+    #     return color, tex
     
     # MaterialData
     def _get_refraction_color(self):
@@ -1240,33 +1242,38 @@ class CyclesShader(CyclesStatic):
 
         self.cycles = self.eevee = node
 
-    # -------------------------------------------------------------
-    #   Volume
-    # -------------------------------------------------------------
-
-    def invertColor(self, color, tex, col):
+   
+    # Node
+    def _invert_color(self, color, tex, col):
         inverse = (1-color[0], 1-color[1], 1-color[2])
-        return inverse, self.invertTex(tex, col)
-
-    def buildVolume(self):
+        return inverse, self._invert_tex(tex, col)
+    
+    # Shader
+    def _build_volume(self):
         if (self.material.thinWall or
             Settings.materialMethod != "BSDF" or
                 not Settings.useVolume):
             return
         self.volume = None
+
         if self.is_enabled("Translucency"):
             transcolor, transtex = self._get_color_tex(
                 ["Transmitted Color"], "COLOR", ColorStatic.BLACK)
-            sssmode, ssscolor, ssstex = self.getSSSInfo(transcolor)
+
+            sssmode, ssscolor, ssstex = self._get_SSS_data(transcolor)
+            
             if self.is_enabled("Transmission"):
-                self.buildVolumeTransmission(transcolor, transtex)
+                self._build_volume_transmission(transcolor, transtex)
+            
             if self.is_enabled("Subsurface"):
-                self.buildVolumeSubSurface(sssmode, ssscolor, ssstex)
+                self._build_volume_sub_surface(sssmode, ssscolor, ssstex)
+
         if self.volume:
             self.volume.width = 240
             Settings.usedFeatures_["Volume"] = True
-
-    def getSSSInfo(self, _):
+    
+    # MaterialData
+    def _get_SSS_data(self, _):                
         if self.material.shader_key == 'UBER_IRAY':
             sssmode = self.getValue(["SSS Mode"], 0)
         elif self.material.shader_key == 'PBRSKIN':
@@ -1282,8 +1289,9 @@ class CyclesShader(CyclesStatic):
             return 1, ssscolor, ssstex
         else:
             return 0, ColorStatic.WHITE, None
-
-    def buildVolumeTransmission(self, transcolor, transtex):
+    
+    # Node
+    def _build_volume_transmission(self, transcolor, transtex):
         from daz_import.Elements.ShaderGroup import VolumeShaderGroup
 
         dist = self.getValue(["Transmitted Measurement Distance"], 0.0)
@@ -1295,9 +1303,11 @@ class CyclesShader(CyclesStatic):
         self.volume.inputs["Absorbtion Density"].default_value = 100/dist
         self.link_color(transtex, self.volume,
                         transcolor, "Absorbtion Color")
-
-    def buildVolumeSubSurface(self, sssmode, ssscolor, ssstex):
+    
+    # MaterilData / Node
+    def _build_volume_sub_surface(self, sssmode, ssscolor, ssstex):
         from daz_import.Elements.ShaderGroup import VolumeShaderGroup
+        
         if self.material.shader_key == 'UBER_IRAY':
             factor = 50
         else:
@@ -1307,7 +1317,7 @@ class CyclesShader(CyclesStatic):
         dist = self.getValue("getChannelScatterDist", 0.0)
 
         if not (sssmode == 0 or ColorStatic.isBlack(ssscolor) or ColorStatic.isWhite(ssscolor) or dist == 0.0):
-            color, tex = self.invertColor(ssscolor, ssstex, 6)
+            color, tex = self._invert_color(ssscolor, ssstex, 6)
             if self.volume is None:
                 self.volume = self.add_group(VolumeShaderGroup, "DAZ Volume")
             self.link_color(tex, self.volume, color, "Scatter Color")
@@ -1323,8 +1333,8 @@ class CyclesShader(CyclesStatic):
             self.volume.inputs["Scatter Density"].default_value = factor/dist
             self.volume.inputs["Scatter Anisotropy"].default_value = self.getValue([
                                                                                    "SSS Direction"], 0)
-
-    def buildOutput(self):
+    # Node
+    def _build_output(self):
         self.column += 1
         output = self.add_node("ShaderNodeOutputMaterial")
         output.target = 'ALL'
@@ -1341,6 +1351,7 @@ class CyclesShader(CyclesStatic):
         if self.liegroups:
             node = self.add_node("ShaderNodeValue", col=self.column-1)
             node.outputs[0].default_value = 1.0
+            
             for lie in self.liegroups:
                 self.link(node.outputs[0], lie.inputs["Alpha"])
 
@@ -1348,17 +1359,20 @@ class CyclesShader(CyclesStatic):
             output.target = 'CYCLES'
             outputEevee = self.add_node("ShaderNodeOutputMaterial")
             outputEevee.target = 'EEVEE'
+            
             if self.eevee:
                 self.link(self.eevee_socket(),
                           outputEevee.inputs["Surface"])
             elif self.cycles:
                 self.link(self.cycles_socket(),
                           outputEevee.inputs["Surface"])
+
             if self.displacement:
                 self.link(self.displacement,
                           outputEevee.inputs["Displacement"])
-
-    def buildDisplacementNodes(self):
+    
+    # Node
+    def _build_displacement_nodes(self):
         channel = self.material.getChannelDisplacement()
 
         if not(channel and
@@ -1394,8 +1408,9 @@ class CyclesShader(CyclesStatic):
 
         mat = self.material.rna
         mat.cycles.displacement_method = 'BOTH'
-
-    def addSingleTexture(self, col, asset, map, colorSpace):
+    
+    # Node
+    def _add_single_texture(self, col, asset, map, colorSpace):
         isnew = False
 
         img = asset.buildCycles(colorSpace)
@@ -1411,15 +1426,16 @@ class CyclesShader(CyclesStatic):
         if not hasMap and texnode:
             return texnode, False
 
-        texnode = self.addTextureNode(col, img, imgname, colorSpace)
+        texnode = self._add_texture_node(col, img, imgname, colorSpace)
         isnew = True
 
         if not hasMap:
             self._set_tex_node__(imgname, texnode, colorSpace)
 
         return texnode, isnew
-
-    def addTextureNode(self, col, img, imgname, colorSpace) -> ShaderNodeTexImage:
+    
+    # Node
+    def _add_texture_node(self, col, img, imgname, colorSpace) -> ShaderNodeTexImage:
         node = self.add_node("ShaderNodeTexImage", col)
 
         node.image = img
@@ -1441,12 +1457,13 @@ class CyclesShader(CyclesStatic):
         if hasattr(node, "color_space"):
             node.color_space = colorSpace
 
+    # Node
     def add_image_tex_node(self, filepath: str, tname, col) -> ShaderNodeTexImage:
         img = bpy.data.images.load(filepath)
         img.name = os.path.splitext(os.path.basename(filepath))[0]
         img.colorspace_settings.name = "Non-Color"
 
-        return self.addTextureNode(col, img, tname, "NONE")
+        return self._add_texture_node(col, img, tname, "NONE")
 
     # ShaderNodeGroup
     def _get_tex_node_(self, key, colorSpace):
@@ -1491,7 +1508,7 @@ class CyclesShader(CyclesStatic):
         elif len(textures) == 0:
             return None
         elif len(textures) == 1:
-            texnode, isnew = self.addSingleTexture(
+            texnode, isnew = self._add_single_texture(
                 col, textures[0], maps[0], colorSpace)
             if isnew:
                 self._link_vector(self.texco, texnode)
@@ -1629,11 +1646,11 @@ class CyclesShader(CyclesStatic):
     def _fix_tex(self, tex, value, invert):
         _, tex = self.multiplySomeTex(value, tex)
         if invert:
-            return self.invertTex(tex, 3)
+            return self._invert_tex(tex, 3)
         else:
             return tex
-
-    def invertTex(self, tex, col):
+    # Node
+    def _invert_tex(self, tex, col):
         if tex:
             inv = self.add_node("ShaderNodeInvert", col)
             self.link(tex.outputs[0], inv.inputs["Color"])

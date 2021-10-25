@@ -99,7 +99,7 @@ class WorldShader(CyclesShader):
                 texco = self.addMapping([0, 0, zrot], scale, texco, 2)
             img = self.getImage(backdrop, "COLOR")
             if img:
-                tex = self.addTextureNode(3, img, img.name, "COLOR")
+                tex = self._add_texture_node(3, img, img.name, "COLOR")
                 self._link_vector(texco, tex)
         from .BackgroundGroup import BackgroundGroup
 

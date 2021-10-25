@@ -84,7 +84,7 @@ class PBRShader(CyclesShader):
         else:
             CyclesShader._build_cutout(self)
 
-    def buildVolume(self):
+    def _build_volume(self):
         ...
 
     def _build_emission(self):

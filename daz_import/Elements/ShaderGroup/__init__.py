@@ -97,7 +97,7 @@ class ShellGroup:
 
         self.addOutput(mult, transp, self.cycles_socket(), "Cycles")
         self.addOutput(mult, transp, self.eevee_socket(), "Eevee")
-        self.buildDisplacementNodes()
+        self._build_displacement_nodes()
 
         if self.displacement:
             mult2 = self.add_node("ShaderNodeMath", 9)
@@ -1093,7 +1093,7 @@ class LieShaderGroup(ShaderGroup):
         texnodes = []
 
         for idx, asset in enumerate(assets):
-            texnode, isnew = self.addSingleTexture(
+            texnode, isnew = self._add_single_texture(
                 3, asset, maps[idx], colorSpace)
             if isnew:
                 innode = texnode
