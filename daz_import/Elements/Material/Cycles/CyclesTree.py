@@ -61,10 +61,10 @@ class CyclesShader(CyclesStatic):
 
         if b_mat:
             self.set_material(b_mat)
-    # Node
 
+    # Node
     def link(self, a, b):
-        return self.links.new(a, b)
+        return self.shader_graph.links.new(a, b)
 
     def __repr__(self):
         return ("<Cycles %s %s %s>" % (self.material.rna, self.shader_graph.nodes, self.shader_graph.links))
@@ -1747,7 +1747,7 @@ class CyclesShader(CyclesStatic):
 
     # 1 ShaderNode
     def _get_link(self, node, key_slot):
-        for link in self.links:
+        for link in self.shader_graph.links:
             if link.to_node == node and \
                     link.to_socket.name == key_slot:
                 return link
@@ -1756,7 +1756,7 @@ class CyclesShader(CyclesStatic):
     # 9 ShaderNode
     def _remove_link(self, node, slot):
         if link := self._get_link(node, slot):
-            self.links.remove(link)
+            self.shader_graph.links.remove(link)
 
     # 10 ShaderNode
     def _replace_slot(self, node, slot, value):

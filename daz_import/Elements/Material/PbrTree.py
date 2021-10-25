@@ -16,7 +16,7 @@ class PBRShader(CyclesShader):
         self.postPBR = None
         
     def __repr__(self):
-        return ("<Pbr %s %s %s>" % (self.material.rna, self.shader_graph.nodes, self.links))
+        return ("<Pbr %s %s %s>" % (self.material.rna, self.shader_graph.nodes, self.shader_graph.links))
 
     def _build_layer(self, uvname):
         self.column = 4

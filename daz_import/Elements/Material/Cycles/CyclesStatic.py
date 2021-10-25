@@ -21,8 +21,8 @@ class CyclesStatic:
         return links
 
     @staticmethod
-    def getLinkTo(shader, node, slot):
-        for link in shader.links:
+    def getLinkTo(shader, node, slot):        
+        for link in shader.shader_graph.links:
             if (link.to_node == node and
                     link.to_socket.name == slot):
                 return link
