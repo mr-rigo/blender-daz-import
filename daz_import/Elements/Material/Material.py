@@ -25,7 +25,7 @@ class Material(Asset):
         from daz_import.geometry import Shell
 
         super().__init__(fileref)
-        
+
         self.channelsData: Channels = Channels(self)
 
         self.scene = None
@@ -253,23 +253,26 @@ class Material(Asset):
 
     #     return gamma
 
-# -------------------------------------------------------------
-#   Get channels
-# -------------------------------------------------------------
+    # -------------------------------------------------------------
+    #   Get channels
+    # -------------------------------------------------------------
 
     def getChannelDiffuse(self):
         return self.channelsData.get_channel("diffuse", "Diffuse Color")
 
     def getDiffuse(self):
-        return self.get_color("getChannelDiffuse", ColorStatic.BLACK)
+        if cache := self.getChannelDiffuse():
+            return cache
+        return ColorStatic.BLACK
 
-    def getChannelDiffuseStrength(self):
-        return self.channelsData.getChannel(["diffuse_strength", "Diffuse Strength"])
+    def getChannelDiffuseStrength(self):        
+        return self.channelsData.get_channel("diffuse_strength", "Diffuse Strength")
 
-    def getChannelDiffuseRoughness(self):
-        return self.channelsData.getChannel(["Diffuse Roughness"])
+    def getChannelDiffuseRoughness(self):        
+        return self.channelsData.get_channel("Diffuse Roughness")
 
     def getChannelGlossyColor(self):
+        self.channelsData.get_channel("Glossy Color", "specular", "Specular Color")
         return self.getTexChannel(["Glossy Color", "specular", "Specular Color"])
 
     def getChannelGlossyLayeredWeight(self):
@@ -370,20 +373,30 @@ class Material(Asset):
         return self.channelsData.getChannel(["u_offset", "Horizontal Offset"])
 
     def getChannelVerticalTiles(self):
-        return self.channelsData.getChannel(["v_scale", "Vertical Tiles"])
+        return self.channelsData.get_channel("v_scale", "Vertical Tiles")
 
     def getChannelVerticalOffset(self):
-        return self.channelsData.getChannel(["v_offset", "Vertical Offset"])
+        return self.channelsData.get_channel("v_offset", "Vertical Offset")
 
     def get_color(self, attr, default):
-        return self.getChannelColor(self.channelsData.getChannel(attr), default)
+        color = self.channelsData.getChannel(attr)
+        return self.getChannelColor(color, default)
 
     def getTexChannel(self, channels):
         for key in channels:
             channel = self.channelsData.get_channel(key)
             if channel and self.hasTextures(channel):
                 return channel
+                
         return self.channelsData.get_channel(*channels)
+
+    # def get_tex_value(self, channels):        
+    #     for key in channels:
+    #         channel = self.channelsData.get_channel(key)
+    #         if channel and self.hasTextures(channel):
+    #             return channel
+
+    #     return self.channelsData.get_channel(*channels)
 
     def hasTexChannel(self, channels) -> bool:
         for key in channels:
@@ -583,3 +596,12 @@ class Material(Asset):
             data.default_factory = lambda: False
             print('-- Undefined shader', shader)
             return data
+
+    def get(self, key: str, default=None):
+        return self.channelsData.getValue(key, default)
+
+    def is_enabled(self, key: str):
+        return self.enabled.get(key)
+
+    def color(self, key, default=None):
+        return self.get_color(key, default)

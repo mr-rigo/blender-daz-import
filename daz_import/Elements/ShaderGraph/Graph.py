@@ -6,11 +6,15 @@ from typing import Any
 class ShaderNodeAbstract:
     alias: str = None
 
-    def __init__(self, graph):
+    def __init__(self, graph, key=None):
         self.graph: ShaderGraph = graph
-        if not self.alias:
+        if not (self.alias or key):
             raise AttributeError('Unknown shader alias')
-        self.inner_node = self.graph.create_by_key(self.alias)
+
+        if not key:
+            key = self.alias
+
+        self.inner_node = self.graph.create_by_key(key)
 
         self.inputs = self.inner_node.inputs
         self.outputs = self.inner_node.outputs
@@ -142,3 +146,30 @@ class ShaderGraph:
 
     def set_active_node(self, node: ShaderNode):
         self.nodes.active = node
+
+    def find_by_type(self, type_: str, one=False):
+        nodes = []
+        for node in self.nodes.values():
+            if node.type == type_:
+                if one:
+                    return node
+                nodes.append(node)
+
+        if one:
+            return
+
+        return nodes
+
+    def node(self, key_type, parent=None, label=None, location=None) -> ShaderNode:
+        node = self.nodes.new(type=key_type)
+
+        if label:
+            node.label = label
+
+        if parent:
+            node.parent = parent
+
+        if location:
+            node.location = location
+
+        return node

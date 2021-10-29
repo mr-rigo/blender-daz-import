@@ -70,14 +70,14 @@ class Channels:
             return self.get_component(attrs)
         return self.get_channel(*attrs, onlyVisible=onlyVisible)
 
-    def get_channel(self, *keys, onlyVisible=True):
+    def get_channel(self, *keys: str, onlyVisible=True):
         for key in keys:
             if channel := self.channels.get(key):
                 if channel.get("visible", True) \
                         or not onlyVisible:
                     return channel
 
-    def get_component(self, key):
+    def get_component(self, key: str):
         if channel := self.__asset.object_dict.get(key):
             return channel()
 
